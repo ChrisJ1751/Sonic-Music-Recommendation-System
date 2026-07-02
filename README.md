@@ -2,6 +2,7 @@
 title: Sonic Music Recommender
 sdk: streamlit
 app_file: app/streamlit_app.py
+python_version: "3.11"
 pinned: false
 short_description: A disciplined music recommender — EASE on Last.fm-360K.
 ---

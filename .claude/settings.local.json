@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/c/Users/Chris Jones/Desktop/**)",
+      "Read(//c/Users/Chris Jones/Downloads/**)"
+    ]
+  }
+}

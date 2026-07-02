@@ -1,0 +1,14 @@
+# Dark "Sonic" theme so the app looks polished without hand-written CSS.
+[theme]
+base = "dark"
+primaryColor = "#1ed760"
+backgroundColor = "#0c0d11"
+secondaryBackgroundColor = "#171a22"
+textColor = "#eef1f6"
+font = "sans serif"
+
+[server]
+runOnSave = true
+
+[browser]
+gatherUsageStats = false

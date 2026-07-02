@@ -1,0 +1,47 @@
+# Data Source Configuration — where the data lives and how to load it.
+# Change the source files? Edit here. Change the SEARCH/modeling? Edit
+# src/harness/search_config.py instead.
+
+data:
+  # Which dataset the pipeline is built on: "lastfm360k" (primary) or "lastfm2k".
+  # The 360K set has real, uncapped listening histories; the 2k set is capped at
+  # each user's top-50 artists (which depressed scores). See decisions.md.
+  active_dataset: "lastfm360k"
+
+  source: "Last.fm — GroupLens HetRec 2011"
+  url: "https://grouplens.org/datasets/hetrec-2011/"
+  download_url: "https://files.grouplens.org/datasets/hetrec2011/hetrec2011-lastfm-2k.zip"
+
+  # Directory holding the extracted .dat files (relative to project root).
+  # Override locally with LASTFM_RAW_DIR in .env.
+  raw_dir: "data/raw"
+
+  files:
+    user_artists: "user_artists.dat"   # userID \t artistID \t weight   (the interactions)
+    artists: "artists.dat"             # id \t name \t url \t pictureURL (artist names for output)
+    tags: "tags.dat"                   # tagID \t tagValue              (for content fallback, later)
+    user_taggedartists: "user_taggedartists.dat"  # user \t artist \t tag \t d \t m \t y
+
+  # Schema of the primary interactions file.
+  interactions:
+    file: "user_artists.dat"
+    sep: "\t"
+    columns:
+      user: "userID"
+      item: "artistID"
+      weight: "weight"        # listening count == IMPLICIT feedback signal
+    # Reported by GroupLens readme (sanity-check on load):
+    expected_users: 1892
+    expected_artists: 17632
+    expected_interactions: 92834
+
+  # Processed artifacts written by `python -m src.harness.make_split`.
+  # (Canonical path constants live in src/utils.py; these are documentation.)
+  processed:
+    train: "data/processed/harness/train.npz"     # search-visible CSR (users x items)
+    test: "data/processed/harness/test.npz"       # search-visible held-out CSR
+    user_index: "data/processed/user_index.parquet"   # matrix row -> userID
+    item_index: "data/processed/item_index.parquet"   # matrix col -> artistID
+    # NOTE: the locked-holdout path is intentionally NOT recorded here. It is
+    # defined ONLY in src/harness/make_split.py so that loop code (run_search,
+    # eval_core) has no symbol pointing at the sealed holdout.

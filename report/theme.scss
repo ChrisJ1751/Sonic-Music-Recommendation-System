@@ -1,0 +1,41 @@
+/*-- scss:defaults --*/
+// Sonic dark theme — green accent over darkly, to match the app.
+$primary:        #1ed760;
+$body-bg:        #0c0d11;
+$body-color:     #e7ebf2;
+$link-color:     #1ed760;
+$code-color:     #a880ff;
+$font-family-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+/*-- scss:rules --*/
+.navbar { border-bottom: 1px solid #272d3a; }
+
+h1, h2, h3, h4 { letter-spacing: -0.2px; }
+h2 { margin-top: 2.2rem; border-top: 1px solid #1e2430; padding-top: 1.4rem; }
+
+// Lead paragraph under the title
+.lead { color: #aeb6c4; font-size: 1.12rem; }
+
+// KPI band
+.kpis { display: flex; flex-wrap: wrap; gap: 12px; margin: 1.2rem 0; }
+.kpi {
+  flex: 1 1 150px; background: #141824; border: 1px solid #272d3a;
+  border-radius: 14px; padding: 14px 16px;
+}
+.kpi .v { font-size: 1.7rem; font-weight: 750; color: #fff; line-height: 1.1; }
+.kpi .l { font-size: 0.8rem; color: #8b93a4; margin-top: 2px; }
+.kpi.hi { border-color: rgba(30,215,96,0.5); }
+.kpi.hi .v { color: #1ed760; }
+
+// Callout tweaks for readability on dark
+.callout { border-radius: 12px; }
+
+figure figcaption { color: #8b93a4; font-size: 0.85rem; }
+
+table { font-size: 0.92rem; }
+thead th { border-bottom: 2px solid #272d3a !important; }
+
+.badge-served {
+  display: inline-block; background: rgba(30,215,96,0.15); color: #1ed760;
+  border-radius: 999px; padding: 2px 10px; font-size: 0.8rem; font-weight: 600;
+}

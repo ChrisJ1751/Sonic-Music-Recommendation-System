@@ -1,0 +1,88 @@
+---
+title: "Sonic — A Disciplined Music Recommender"
+subtitle: "Collaborative filtering on Last.fm, evaluated the way a research team would ship it."
+---
+
+::: {.lead}
+This is the written companion to the [Sonic recommender]({{< var app_url >}}). It documents
+what the system does, how it was built, and — most importantly — *how we know the numbers are
+real*: a frozen evaluation harness, a leakage-safe holdout, strong baselines, and significance
+tests. The served model is [**EASE**]{.badge-served}, a linear item-item autoencoder.
+:::
+
+## The one-paragraph version
+
+We recommend musical artists from implicit listening data (play counts, not ratings). Starting on
+the small **Last.fm-2k** research set, a disciplined hyperparameter search found that a *low-capacity*
+matrix-factorization model won and a deep variational autoencoder lost — the textbook result for tiny,
+sparse data. We then scaled to **Last.fm-360K** (real, uncapped histories, 1.68M interactions), and the
+ranking **flipped**: the higher-capacity **EASE** autoencoder now beats tuned ALS by a statistically
+significant margin, and it is the served model. Under honest full-catalogue ranking it scores
+**NDCG\@10 = 0.22, NDCG\@100 = 0.36, Recall\@50 = 0.42** — squarely in the published state-of-the-art
+band for music recommendation.
+
+## Headline results {#headline}
+
+::: {.kpis}
+::: {.kpi .hi}
+::: {.v}
+0.219
+:::
+::: {.l}
+NDCG\@10 — tightest cutoff
+:::
+:::
+::: {.kpi}
+::: {.v}
+0.361
+:::
+::: {.l}
+NDCG\@100 — SOTA band
+:::
+:::
+::: {.kpi}
+::: {.v}
+0.423
+:::
+::: {.l}
+Recall\@50 — matches MSD SOTA
+:::
+:::
+::: {.kpi}
+::: {.v}
++0.036
+:::
+::: {.l}
+EASE − ALS, p < 0.001
+:::
+:::
+:::
+
+All metrics are **full-ranking**: every model ranks all 11,607 artists, with no sampled-negative
+shortcuts (which are known to inflate and re-order recommender metrics — Krichene & Rendle, KDD 2020).
+
+## How to read this report
+
+| Page | What it covers |
+|------|----------------|
+| [The data](data.qmd) | The Last.fm-360K core, its sparsity and long tail, and why the small 2k set was a trap. |
+| [Methodology](methodology.qmd) | The frozen harness, the leakage-safe split, the disciplined search, and how a recommendation is generated. |
+| [Results](results.qmd) | The model leaderboard, significance testing, calibration against published SOTA, and beyond-accuracy metrics. |
+| [The pivot](pivot.qmd) | Why the served model changed from ALS (on 2k) to EASE (on 360K) — the core story. |
+| [Limitations](limitations.qmd) | An honest account of what the model cannot do, and the ethical considerations. |
+
+::: {.callout-note appearance="simple"}
+**Why two artifacts?** This report is the *read-the-work* deliverable. The
+[Streamlit app]({{< var app_url >}}) is the *play-with-it* deliverable — the same model served live,
+with an interactive recommender and artist-to-artist radio. Both import one shared inference core
+(`src/serving.py`); a FastAPI service exposes the same model as a JSON API.
+:::
+
+## The engineering, in one view
+
+- **Model:** EASE (Steck, WWW 2019) — a closed-form linear item-item autoencoder,
+  $B = -P / \operatorname{diag}(P)$ where $P = (X^\top X + \lambda I)^{-1}$; no hidden layers, no SGD.
+- **Data:** Last.fm-360K, filtered to a recommendable core of 39,499 users × 11,607 artists (1.68M interactions).
+- **Evaluation:** frozen `eval_core.py`, per-user leakage-safe holdout, 5,000-resample paired bootstrap for significance.
+- **Serving:** one shared `src/serving.py` behind a Streamlit app and a FastAPI service.
+- **Rigor:** deterministic given seeds, 53 tests, ruff-clean, CI on every push.

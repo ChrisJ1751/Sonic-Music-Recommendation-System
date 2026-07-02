@@ -1,0 +1,48 @@
+# Data — raw + bulky artifacts are NOT committed (raw is re-downloadable).
+# But we DO commit the small processed 360K matrix (~7.5 MB) so the hosted app
+# can run without the 2.1 GB raw dump or the 514 MB EASE cache (EASE refits at
+# startup in ~15 s).
+data/raw/
+data/raw_360k/
+data/interim/
+data/processed/*
+!data/processed/lastfm360k
+!data/processed/harness
+data/processed/lastfm360k/*
+!data/processed/lastfm360k/matrix.npz
+!data/processed/lastfm360k/item_ids.parquet
+!data/processed/lastfm360k/user_ids.parquet
+data/processed/harness/*
+!data/processed/harness/_LOCKED_holdout
+data/processed/harness/_LOCKED_holdout/*
+!data/processed/harness/_LOCKED_holdout/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.venv*/
+venv*/
+env/
+*.egg-info/
+.pytest_cache/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Outputs — keep the dirs, ignore bulky artifacts
+outputs/figures/*
+outputs/experiments/*
+outputs/logs/
+outputs/runs/
+!outputs/**/.gitkeep
+# The search history is a portfolio artifact — keep it tracked.
+!outputs/experiments/log.jsonl
+
+# Quarto report — keep the source (.qmd/.scss/figures), ignore the render + cache
+report/_site/
+report/.quarto/
+
+# Env / OS
+.env
+.DS_Store
+Thumbs.db

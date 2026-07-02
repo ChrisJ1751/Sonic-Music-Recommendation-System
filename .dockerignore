@@ -1,0 +1,16 @@
+.venv*/
+venv/
+.git/
+.github/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+notebooks/
+data/
+outputs/
+tests/
+docs/
+*.md
+!README.md
+.env

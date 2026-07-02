@@ -1,0 +1,57 @@
+project:
+  type: website
+  output-dir: _site
+  title: "Sonic — A Disciplined Music Recommender"
+
+website:
+  title: "Sonic"
+  description: "A collaborative-filtering music recommender, built and evaluated like a research project."
+  reader-mode: true
+  page-navigation: true
+  navbar:
+    background: dark
+    pinned: true
+    right:
+      - text: "Live demo"
+        href: "http://localhost:8501"
+  sidebar:
+    style: docked
+    background: dark
+    contents:
+      - text: "Overview"
+        href: index.qmd
+      - text: "The data"
+        href: data.qmd
+      - text: "Methodology"
+        href: methodology.qmd
+      - text: "Results"
+        href: results.qmd
+      - text: "Model exploration"
+        href: exploration.qmd
+      - text: "The pivot"
+        href: pivot.qmd
+      - text: "Limitations & ethics"
+        href: limitations.qmd
+  page-footer:
+    left: "Sonic — portfolio project (target: Spotify DS)."
+    right: "Served model: EASE on Last.fm-360K. Built with Quarto."
+
+format:
+  html:
+    theme:
+      - darkly
+      - theme.scss
+    toc: true
+    toc-depth: 3
+    toc-title: "On this page"
+    number-sections: false
+    fig-align: center
+    code-fold: true
+    code-tools: false
+    smooth-scroll: true
+    link-external-newwindow: true
+    grid:
+      body-width: 900px
+
+execute:
+  enabled: false   # the report renders authored prose + pre-generated figures; nothing is re-run

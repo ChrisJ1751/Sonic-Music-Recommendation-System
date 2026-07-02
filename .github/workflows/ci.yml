@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          # 3.12 has stable `implicit` wheels. The project also runs on 3.14
+          # locally; pin a known-good runner here.
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: ruff check src api tests
+
+      - name: Fetch Last.fm dataset (needed by the API test)
+        run: |
+          mkdir -p data/raw
+          curl -sSL -o /tmp/lastfm.zip \
+            https://files.grouplens.org/datasets/hetrec2011/hetrec2011-lastfm-2k.zip
+          unzip -o -q /tmp/lastfm.zip -d data/raw
+
+      - name: Test (pytest)
+        run: pytest -q

@@ -15,6 +15,8 @@ The item ids ARE artist names (human-readable, handy for the API/demo).
 """
 from __future__ import annotations
 
+import os
+import urllib.request
 from pathlib import Path
 
 import numpy as np
@@ -32,6 +34,15 @@ CACHE_DIR = PROCESSED_DIR / "lastfm360k"
 MATRIX_PATH = CACHE_DIR / "matrix.npz"
 USERS_PATH = CACHE_DIR / "user_ids.parquet"
 ITEMS_PATH = CACHE_DIR / "item_ids.parquet"
+
+# On a fresh cloud deploy (e.g. a Hugging Face Space) the ~7.5 MB processed cache
+# may not be present locally — Git LFS files don't always materialise. Fall back to
+# fetching it from the repo's public GitHub LFS media host. Override via env var.
+DATA_URL_BASE = os.environ.get(
+    "SONIC_DATA_URL",
+    "https://media.githubusercontent.com/media/ChrisJ1751/"
+    "Sonic-Music-Recommendation-System/main/data/processed/lastfm360k",
+)
 
 # Preprocessing parameters (a change here is a decisions.md entry).
 MIN_ARTIST_USERS = 100      # >=100 listeners -> ~16.9k recommendable artists
@@ -98,8 +109,37 @@ def save_cache(im: InteractionMatrix) -> None:
     pd.DataFrame({"artist": im.item_ids}).to_parquet(ITEMS_PATH, index=False)
 
 
+def _is_lfs_pointer(path: Path) -> bool:
+    """A Git LFS pointer is a tiny text stub, not the real binary — happens when a
+    cloud host checks out the repo without materialising LFS objects."""
+    try:
+        with open(path, "rb") as fh:
+            return fh.read(40).startswith(b"version https://git-lfs")
+    except OSError:
+        return False
+
+
+def _fetch_cache() -> bool:
+    """Ensure the processed cache is present as real files, downloading it from the
+    public GitHub LFS media host if a file is missing or is an unresolved LFS
+    pointer (self-heals a cloud deploy). Returns True if the cache is usable after."""
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    for path in (MATRIX_PATH, USERS_PATH, ITEMS_PATH):
+        if path.exists() and not _is_lfs_pointer(path):
+            continue
+        url = f"{DATA_URL_BASE}/{path.name}"
+        logger.info("fetching %s from %s (missing or LFS pointer)", path.name, DATA_URL_BASE)
+        try:
+            urllib.request.urlretrieve(url, path)  # noqa: S310 (trusted https host)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("could not fetch %s: %s", path.name, exc)
+            return False
+    return MATRIX_PATH.exists() and not _is_lfs_pointer(MATRIX_PATH)
+
+
 def load_or_build() -> InteractionMatrix:
-    """Return the cached 360K matrix, building and caching it on first use."""
+    """Return the cached 360K matrix; fetch it if missing, build it as a last resort."""
+    _fetch_cache()
     if MATRIX_PATH.exists():
         matrix = sp.load_npz(MATRIX_PATH).tocsr()
         user_ids = pd.read_parquet(USERS_PATH)["user"].to_numpy()

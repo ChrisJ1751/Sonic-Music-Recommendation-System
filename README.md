@@ -1,3 +1,15 @@
+---
+title: Sonic Music Recommender
+sdk: streamlit
+app_file: app/streamlit_app.py
+pinned: false
+short_description: A disciplined music recommender — EASE on Last.fm-360K.
+---
+
+<!-- The YAML block above is Hugging Face Space config (used when this repo is
+     deployed as a Streamlit Space). GitHub renders it as a small table; harmless.
+     See DEPLOY.md. -->
+
 # Music Recommendation System — with Disciplined Hyperparameter Search
 
 A collaborative-filtering music recommender built on the **Last.fm (HetRec 2011)**

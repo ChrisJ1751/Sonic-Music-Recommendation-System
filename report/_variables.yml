@@ -1,4 +1,4 @@
 # The deployed Streamlit app URL, referenced in the report as {{< var app_url >}}.
 # For local use this is localhost:8501; before publishing, set it to your Hugging
 # Face Space URL (e.g. https://your-name-sonic.hf.space) and re-render.
-app_url: "http://localhost:8501"
+app_url: "https://jone1751-sonic.hf.space"

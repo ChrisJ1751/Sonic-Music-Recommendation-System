@@ -13,7 +13,7 @@ website:
     pinned: true
     right:
       - text: "Live demo"
-        href: "http://localhost:8501"
+        href: "https://jone1751-sonic.hf.space"
   sidebar:
     style: docked
     background: dark

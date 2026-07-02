@@ -13,6 +13,12 @@ short_description: A disciplined music recommender — EASE on Last.fm-360K.
 
 # Music Recommendation System — with Disciplined Hyperparameter Search
 
+### [Try the live app](https://jone1751-sonic.hf.space) · [Read the report](https://chrisj1751.github.io/Sonic-Music-Recommendation-System/)
+
+[![app](https://img.shields.io/badge/live%20app-Hugging%20Face-1ed760)](https://jone1751-sonic.hf.space)
+[![report](https://img.shields.io/badge/report-GitHub%20Pages-8b5cf6)](https://chrisj1751.github.io/Sonic-Music-Recommendation-System/)
+[![CI](https://github.com/ChrisJ1751/Sonic-Music-Recommendation-System/actions/workflows/ci.yml/badge.svg)](https://github.com/ChrisJ1751/Sonic-Music-Recommendation-System/actions/workflows/ci.yml)
+
 A collaborative-filtering music recommender built on the **Last.fm (HetRec 2011)**
 user–artist listening dataset, with an **autoresearch-style three-file search
 architecture** for tuning the model against a *frozen, reusable* evaluation

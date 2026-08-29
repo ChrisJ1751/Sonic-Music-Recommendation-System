@@ -49,7 +49,7 @@ with left:
         textposition="outside", cliponaxis=False,
     ))
     fig.update_layout(title="Model comparison (NDCG@10)", xaxis_range=[0, 0.26], showlegend=False)
-    st.plotly_chart(style_fig(fig, 300), use_container_width=True)
+    st.plotly_chart(style_fig(fig, 300), width="stretch")
     st.success(about["significance"])
 
 with right:

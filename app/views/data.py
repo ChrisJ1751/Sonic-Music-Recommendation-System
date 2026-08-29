@@ -39,7 +39,7 @@ with left:
                   annotation_text=f"median {d['median_history']}", annotation_font_size=11)
     fig.update_layout(title="Distribution of history length",
                       xaxis_title="artists in a user's history", yaxis_title="users")
-    st.plotly_chart(style_fig(fig, 320), use_container_width=True)
+    st.plotly_chart(style_fig(fig, 320), width="stretch")
 
 with right:
     st.markdown("#### Listeners per artist")
@@ -48,7 +48,7 @@ with right:
     fig = go.Figure(go.Histogram(x=np.log10(ipi), nbinsx=40, marker_color=PURPLE))
     fig.update_layout(title="Distribution of artist popularity (log scale)",
                       xaxis_title="log10(distinct listeners)", yaxis_title="artists")
-    st.plotly_chart(style_fig(fig, 320), use_container_width=True)
+    st.plotly_chart(style_fig(fig, 320), width="stretch")
 
 st.divider()
 
@@ -69,7 +69,7 @@ with lc:
     fig.update_layout(title=f"Lorenz curve (Gini {d['gini_listeners']:.2f})",
                       xaxis_title="cumulative share of artists (least → most popular)",
                       yaxis_title="cumulative share of listener-relations")
-    st.plotly_chart(style_fig(fig, 340), use_container_width=True)
+    st.plotly_chart(style_fig(fig, 340), width="stretch")
 
 with rc:
     st.markdown("#### What that means for modelling")
@@ -95,4 +95,4 @@ for col, fname, cap in [
 ]:
     p = FIG_DIR / fname
     if p.exists():
-        col.image(str(p), caption=cap, use_container_width=True)
+        col.image(str(p), caption=cap, width="stretch")

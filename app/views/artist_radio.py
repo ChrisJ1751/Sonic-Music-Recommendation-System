@@ -42,7 +42,7 @@ else:
     df["match"] = 100.0 * df["score"] / top
     df.index = range(1, len(df) + 1)
     st.dataframe(
-        df[["name", "match"]], use_container_width=True, height=int(35 * (len(df) + 1) + 3),
+        df[["name", "match"]], width="stretch", height=int(35 * (len(df) + 1) + 3),
         column_config={
             "_index": st.column_config.NumberColumn("#", width="small"),
             "name": st.column_config.TextColumn("artist"),

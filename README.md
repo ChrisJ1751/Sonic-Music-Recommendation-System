@@ -146,7 +146,7 @@ jupyter lab notebooks/00_eda_interaction_matrix.ipynb
 python -m src.harness.make_split        # build the sealed per-user split
 python -m src.harness.run_session       # run the pre-registered search -> log.jsonl
 python -m src.harness.confirm_holdout   # one-time locked-holdout confirmation
-pytest                                  # 108 tests (86 hermetic + 11 integration)
+pytest                                  # 119 tests (86 hermetic + 11 integration)
 ```
 
 ## Development
@@ -154,7 +154,7 @@ pytest                                  # 108 tests (86 hermetic + 11 integratio
 ```bash
 pip install -e ".[dev]"   # editable install + dev tools (pyproject is canonical)
 ruff check src api tests  # lint
-pytest                    # 108 tests
+pytest                    # 119 tests
 docker build -t music-rec . && docker run -p 8000:8000 music-rec   # containerised API
 ```
 
@@ -254,7 +254,7 @@ The deep model climbs from *last* on 2k to *2nd* on 360K — overtaking ALS — 
 still trails EASE. It covers ~2x the catalogue (0.81 vs 0.42) at lower accuracy: the
 accuracy-vs-discovery frontier, not a free win. EASE stays served.
 
-108 tests pass (97 of them with no model artifacts, so CI runs them on every push), ruff clean. Three surfaces from one shared core — a **Streamlit**
+119 tests pass (108 of them with no model artifacts, so CI runs them on every push), ruff clean. Three surfaces from one shared core — a **Streamlit**
 app, a **FastAPI** service, and a **Quarto** report (see `report/`, incl. the
 *Model exploration* page). Next planned: track-level (song) recommendations, on a
 more recent dataset (e.g. the Spotify Million Playlist Dataset). See

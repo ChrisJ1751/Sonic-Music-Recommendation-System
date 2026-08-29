@@ -15,6 +15,51 @@ Template:
 
 ---
 
+## 2026-08-28 — Deploy the API to a Hugging Face Docker Space, not Fly
+**Decision:** Host the containerised API as a **Hugging Face Docker Space**
+(`jone1751/sonic-api`, cpu-basic, PRO) rather than on Fly.io. Live at
+<https://jone1751-sonic-api.hf.space>.
+
+**Why:** consolidation, not economics — Fly is cheaper (~$2/mo vs a $9/mo PRO
+subscription). The Streamlit demo, the EASE artifact
+(`jone1751/sonic-ease-360k`) and now the API all sit under one Hugging Face
+account, which is the surface a reviewer actually browses, and PRO is already
+justified by other work in the pipeline. The container image is unchanged
+between the two targets; only platform config differs.
+
+**What it costs, honestly:**
+- No memory pinning. cpu-basic hands you 16 GB whether or not you need 688 MiB,
+  so the deployment itself cannot demonstrate right-sizing. The measurement is
+  the defensible artifact, not the platform — it lives in the 2026-08-28 entry
+  below and in `fly.toml`, which is kept as a working, fully-configured
+  alternative deployment.
+- Ephemeral disk. Persistent storage on Spaces is a paid add-on, so a slept
+  Space re-downloads the 514 MiB artifact on wake. Fly's volume avoided that.
+  Measured build + boot from a cold push: **~100 s**.
+
+**Verified in production:** `/recommendations/17084?k=5` returns scores
+bit-identical to local (`joy division 0.5706530809402466`), which confirms the
+artifact was fetched, SHA-256 verified and loaded rather than silently refit.
+`/health` reports 39,499 users x 11,607 artists. Validation (422), cold-start
+fallback, MMR diversity, 404s and `X-Request-ID` round-tripping all check out.
+
+**One bug found by deploying, not by testing:** the first Fly deploy
+crash-looped with `ImportError: libgomp.so.1`. `implicit`'s compiled extension
+dlopens the OpenMP runtime at import; the manylinux wheel needs no compiler but
+does need `libgomp1`, which is absent from `python:3.12-slim`. Platform-
+independent — it would have failed identically on HF. CI's docker job now runs
+`python -c "import api.main"` inside the image, which reproduces it exactly.
+
+**Revisit when:** Space cold starts become annoying (buy persistent storage, or
+move back to Fly, where `fly.toml` is ready), or if the API needs memory limits
+enforced rather than merely documented.
+
+**Supersedes:** the deployment-target half of the 2026-08-28 entry below
+("Deploy the API to Fly.io; ship the EASE matrix, never refit it in the
+container"). Everything that entry says about the *artifact* — ship it, never
+refit it, verify size + SHA-256 at boot — stands unchanged and is what makes
+this deployment work.
+
 ## 2026-08-28 — Deploy the API to Fly.io; ship the EASE matrix, never refit it in the container
 **Decision:** Deploy the FastAPI service as a public, containerised surface on
 **Fly.io** (2 GB shared-cpu-1x, scale-to-zero, persistent volume), and treat the

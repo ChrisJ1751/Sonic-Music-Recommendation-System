@@ -55,6 +55,10 @@ ENV PATH="/opt/venv/bin:$PATH" \
 # Override at runtime to serve a different EASE fit; fly.toml does exactly that.
 # The digest is verified at boot, so the image states precisely which model it
 # serves and a mismatch fails the boot rather than serving the wrong weights.
+# The landing page's "Open the app" link. Defaults to localhost:8501 in
+# api/main.py for local dev; in a container it must point at the live demo.
+ENV APP_URL=https://jone1751-sonic.hf.space
+
 ENV EASE_B_URL=https://huggingface.co/jone1751/sonic-ease-360k/resolve/main/ease_B.npy \
     EASE_B_SHA256=2ab7e37dab346cd88b7c36a3b218756f9382de1bc28bbf138ea0eeb431709b37 \
     EASE_B_BYTES=538889924

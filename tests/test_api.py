@@ -13,6 +13,7 @@ pytestmark = pytest.mark.integration
 if not (PROCESSED_DIR / "lastfm360k" / "matrix.npz").exists():
     pytest.skip("360K core not built (run `python -m src.data_360k`)", allow_module_level=True)
 
+from api import main  # noqa: E402
 from api.main import app  # noqa: E402
 
 
@@ -80,4 +81,6 @@ def test_about(client):
 def test_landing_page(client):
     r = client.get("/")
     assert r.status_code == 200 and "Sonic" in r.text
-    assert "/docs" in r.text and "8501" in r.text  # points at API explorer + Streamlit app
+    # links to the API explorer and to whatever APP_URL resolves to (localhost
+    # in dev, the live Space in a container)
+    assert "/docs" in r.text and main.APP_URL in r.text

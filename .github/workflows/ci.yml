@@ -28,7 +28,9 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Lint (ruff)
-        run: ruff check src api tests scripts
+        # app/ included: it is the primary deployed surface and was
+        # previously the only unlinted package in the repo.
+        run: ruff check src api app tests scripts
 
       - name: Test (hermetic suite)
         # The contract tests build a synthetic RecoState, so the whole HTTP

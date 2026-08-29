@@ -1,30 +1,56 @@
-name: Deploy API to Fly.io
+name: Deploy API to Hugging Face Space
 
-# Manual trigger only, deliberately. Deploying is an outward-facing action, so it
-# is not wired to `push`. Once you trust the pipeline, add:
-#   on:
-#     push:
-#       branches: [main]
-# Requires a FLY_API_TOKEN repository secret (`flyctl tokens create deploy`).
+# Manual trigger only, deliberately: deploying is outward-facing, so it is not
+# wired to `push`. Add an `on: push: branches: [main]` block once you want CD.
+#
+# Requires an HF_TOKEN repository secret with WRITE scope
+# (https://huggingface.co/settings/tokens).
+#
+# Why this workflow exists: a Space declares its SDK in README metadata, and this
+# repo's README.md carries the *Streamlit* Space header. Rather than maintaining a
+# long-lived branch that differs only in that one file -- which needs a manual
+# merge and conflict resolution on every deploy -- this swaps the README in CI and
+# force-pushes a detached snapshot. The repo keeps exactly one source of truth.
+#
+# Fly.io remains a working alternative deployment; see fly.toml and DEPLOY.md §4.
+
 on:
   workflow_dispatch:
+    inputs:
+      space:
+        description: "Target Space (owner/name)"
+        required: true
+        default: "jone1751/sonic-api"
+
+concurrency:
+  group: deploy-space
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    concurrency:
-      group: fly-deploy
-      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
         with:
           # The Dockerfile copies the committed 360K core and fails the build if
-          # these are LFS pointer stubs.
+          # these arrive as LFS pointer stubs.
           lfs: true
+          fetch-depth: 0
 
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: "Swap in the Space README (declares sdk=docker, app_port=8000)"
+        run: cp docker/hf-space-README.md README.md
 
-      - name: Deploy
-        run: flyctl deploy --remote-only
+      - name: Push a snapshot to the Space
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SPACE: ${{ inputs.space }}
+        run: |
+          test -n "$HF_TOKEN" || { echo "::error::HF_TOKEN secret is not set"; exit 1; }
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b space-snapshot
+          git add README.md
+          git commit -m "Deploy ${GITHUB_SHA::7} from ${GITHUB_REF_NAME}"
+          git lfs install --local
+          git remote add space "https://user:${HF_TOKEN}@huggingface.co/spaces/${SPACE}"
+          git push --force space space-snapshot:main

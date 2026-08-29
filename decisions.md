@@ -15,6 +15,55 @@ Template:
 
 ---
 
+## 2026-08-28 — Production-readiness pass on the serving layer
+**Decision:** Before calling the API "shipped", fix the things that were wrong in
+a way only a live deployment exposes. Four real defects, all found by probing the
+running service rather than by reading it.
+
+**1. `/health` lied.** It returned `200 {"status": "ok"}` with `n_users: 0`
+while the model was still loading. Every orchestrator — Fly's check, a k8s
+readiness probe, a load balancer — would mark that instance healthy and route
+traffic at something that could not serve a single recommendation. It now
+returns **503 `{"status": "loading"}` with `Retry-After: 10`** until the model is
+actually resident, and 200 only once it is. That is the difference between a
+liveness probe and a readiness probe, and only the latter is useful here.
+
+**2. Five endpoints returned 500 on a bare `KeyError`.** `_reco()` indexed
+`STATE["reco"]` directly, so an unready instance answered with a stack trace —
+which reads as a bug and gives a caller nothing to retry on. Now a clean **503
+with `Retry-After`**. `/about` and `/` deliberately still serve, since neither
+needs the matrix.
+
+**3. Five of seven endpoints were untyped in OpenAPI** (`additionalProperties:
+true`) because their handlers returned bare `dict`. `/docs` is this project's
+shop window; an untyped schema documents nothing. Every 200 response now
+resolves to a named model, and `strategy` is a closed `Literal` rather than a
+free string. A test asserts this so it cannot silently rot.
+
+**4. The live Streamlit app shipped a dead link.** `REPORT_URL` defaulted to
+`http://localhost:8080` and was never set on the Space, so *every visitor* got a
+localhost link for "open the report". The same bug existed on the API landing
+page (`APP_URL`). Both now default to the published URL and take an env override
+— production correct by construction, local dev the special case. The general
+lesson: a localhost default is a loaded gun in anything that gets deployed.
+
+**Also:** permissive CORS (public, read-only, unauthenticated GET API, no
+credentials) so it is callable from a browser; `app/` added to the ruff run —
+it was the only unlinted package and is the primary deployed surface;
+Dependabot for pip / actions / docker, which is the mechanism that turns
+floor-only version pins into reviewable PRs instead of surprise breakage; and a
+deploy workflow that swaps the Space README in CI, removing the long-lived
+branch that differed in one file and needed a manual merge every deploy.
+
+**Not done, deliberately:** no rate limiting, no metrics endpoint, no lockfile,
+no API versioning. Each needs either a dependency or a URL change; see the
+"still open" list in DEPLOY.md rather than assuming they were overlooked.
+
+**Why it matters beyond this repo:** every one of the four defects was invisible
+to a green test suite and a passing lint. They were only observable by running
+the thing and asking what happens when it is *not* healthy. That is the argument
+for the readiness tests now in `tests/test_api_contract.py`.
+
 ## 2026-08-28 — Deploy the API to a Hugging Face Docker Space, not Fly
 **Decision:** Host the containerised API as a **Hugging Face Docker Space**
 (`jone1751/sonic-api`, cpu-basic, PRO) rather than on Fly.io. Live at

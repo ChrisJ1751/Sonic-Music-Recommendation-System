@@ -2,24 +2,54 @@
 # so an upstream release reaches the build the moment it is published -- these
 # PRs are the mechanism that surfaces that as a reviewable change with CI run
 # against it, rather than as a surprise on the next deploy.
+#
+# Everything is grouped into ONE PR per ecosystem per interval. Ungrouped, this
+# opens a PR per package and drowns a solo-maintainer repo; grouped, it is a
+# single "here is this month's dependency drift" review.
 version: 2
 updates:
   - package-ecosystem: pip
     directory: "/"
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 1
     groups:
-      python-dependencies:
+      python:
         patterns: ["*"]
+    commit-message:
+      prefix: "deps"
 
   # Pinned action versions go stale silently and are a supply-chain surface.
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: monthly
+    open-pull-requests-limit: 1
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "ci"
 
   - package-ecosystem: docker
     directory: "/"
     schedule:
       interval: monthly
+    open-pull-requests-limit: 1
+    groups:
+      base-images:
+        patterns: ["*"]
+    commit-message:
+      prefix: "docker"
+    ignore:
+      # The Python base image tag is pinned deliberately. 3.12 matches the CI
+      # runner, so the interpreter the tests run on is the interpreter that
+      # ships; and implicit wheel availability lags new Python releases (see
+      # AGENTS.md). Moving it is a decision to take together with CI and a green
+      # docker job, not a routine bump -- Dependabot proposed 3.12 -> 3.14 on the
+      # first run, which would have broken both properties at once.
+      # Patch-level rebuilds of the same tag still come through.
+      - dependency-name: "python"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"

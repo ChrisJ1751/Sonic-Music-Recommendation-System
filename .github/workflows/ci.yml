@@ -59,7 +59,7 @@ jobs:
 
       - name: Smoke test — the app imports inside the image
         run: |
-          docker run --rm --entrypoint python sonic-api:ci \n            -c "import api.main; print('import ok')"
+          docker run --rm --entrypoint python sonic-api:ci -c "import api.main; print(chr(111)+chr(107))"
 
       - name: Assert the 514 MiB artifact is NOT baked into the image
         run: |

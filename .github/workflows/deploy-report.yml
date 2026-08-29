@@ -27,7 +27,7 @@ jobs:
       - uses: quarto-dev/quarto-actions/setup@v2
       - name: Render report
         run: quarto render report
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: report/_site
 

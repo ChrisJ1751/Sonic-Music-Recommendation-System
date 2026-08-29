@@ -23,10 +23,12 @@ os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 
 from contextlib import asynccontextmanager  # noqa: E402
+from typing import Literal  # noqa: E402
 
-from fastapi import FastAPI, HTTPException, Query  # noqa: E402
+from fastapi import FastAPI, HTTPException, Query, Response  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import HTMLResponse  # noqa: E402
-from pydantic import BaseModel  # noqa: E402
+from pydantic import BaseModel, Field  # noqa: E402
 
 from api.logging_config import RequestLoggingMiddleware, configure_logging  # noqa: E402
 from src import serving  # noqa: E402
@@ -39,6 +41,14 @@ configure_logging()   # after get_logger, so its text handlers are replaced by J
 # set APP_URL (the Dockerfile points it at the live Space). Same pattern as
 # REPORT_URL in app/views/overview.py.
 APP_URL = os.environ.get("APP_URL", "http://localhost:8501")
+
+# Public, read-only, unauthenticated GET API -- permissive CORS is appropriate
+# and lets anyone call it from a browser. Narrow it with a comma-separated
+# CORS_ALLOW_ORIGINS. Credentials are never allowed (nor can they be, with "*").
+CORS_ALLOW_ORIGINS = [
+    o.strip() for o in os.environ.get("CORS_ALLOW_ORIGINS", "*").split(",") if o.strip()
+]
+
 STATE: dict = {}
 
 
@@ -62,19 +72,45 @@ async def lifespan(app: FastAPI):
     STATE.clear()
 
 
-app = FastAPI(title="Sonic — Last.fm Artist Recommender", version="2.0.0", lifespan=lifespan)
+app = FastAPI(
+    title="Sonic — Last.fm Artist Recommender",
+    version="2.0.0",
+    lifespan=lifespan,
+    description=(
+        "Serving layer for the Last.fm-360K artist recommender. Served model: "
+        "**EASE** (Steck 2019), a linear item-item autoencoder.\n\n"
+        "IDs are matrix indices: `user_id` is a user row, `artist_id` an artist "
+        "column. A `user_id` past the end of the matrix falls back to popularity "
+        "rather than 404ing.\n\n"
+        "Every response carries an `X-Request-ID` (echoed if you supply one)."
+    ),
+)
 app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ALLOW_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET"],
+    allow_headers=["*"],
+    expose_headers=["X-Request-ID"],
+)
+
+
+Strategy = Literal["ease", "ease+mmr", "cold_start_popularity"]
 
 
 class Recommendation(BaseModel):
-    artist_id: int
+    artist_id: int = Field(description="Artist column index in the interaction matrix.")
     name: str
-    score: float
+    score: float = Field(description="EASE score; popularity count for the cold-start fallback.")
 
 
 class RecommendationResponse(BaseModel):
     user_id: int
-    strategy: str  # "ease" | "ease+mmr" | "cold_start_popularity"
+    strategy: Strategy = Field(
+        description="`ease` for a known user, `ease+mmr` when diversity > 0, "
+                    "`cold_start_popularity` when the user is not in the matrix."
+    )
     k: int
     recommendations: list[Recommendation]
 
@@ -86,8 +122,77 @@ class SimilarArtistsResponse(BaseModel):
     similar: list[Recommendation]
 
 
+class HealthResponse(BaseModel):
+    """Readiness, not just liveness -- `status` is `ok` only once the model is loaded."""
+
+    status: Literal["ok", "loading"]
+    dataset: str | None
+    model: str
+    n_users: int
+    n_artists: int
+
+
+class ArtistRef(BaseModel):
+    artist_id: int
+    name: str
+
+
+class PopularArtistsResponse(BaseModel):
+    artists: list[ArtistRef]
+
+
+class SampleUser(BaseModel):
+    user_id: int
+    top_artist: str
+
+
+class SampleUsersResponse(BaseModel):
+    users: list[SampleUser]
+
+
+class TopArtist(BaseModel):
+    artist_id: int
+    name: str
+    plays: int
+
+
+class UserProfileResponse(BaseModel):
+    user_id: int
+    in_dataset: bool = Field(description="False for a user_id outside the matrix; still a 200.")
+    n_artists: int | None = Field(default=None, description="Absent when in_dataset is false.")
+    top_artists: list[TopArtist]
+
+
+class AboutResponse(BaseModel):
+    """Reported results + methodology. Static; the single source of truth is
+    `src.serving.about_payload()`, which the Streamlit app renders too."""
+
+    model: dict
+    headline: list[dict]
+    leaderboard: list[dict]
+    significance: str
+    beyond_accuracy: list[dict]
+    cutoff_curve: dict
+    methodology: list[dict]
+    pivot: str
+    stack: list[str]
+
+
 def _reco() -> serving.RecoState:
-    return STATE["reco"]
+    """The loaded model, or a clean 503 if startup has not finished.
+
+    Without this the KeyError surfaces as a 500 with a stack trace, which reads
+    as a bug rather than as "not ready yet", and gives a load balancer nothing
+    actionable to retry on.
+    """
+    state = STATE.get("reco")
+    if state is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Model is still loading. Retry shortly.",
+            headers={"Retry-After": "10"},
+        )
+    return state
 
 
 _LANDING = """<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -125,33 +230,50 @@ def landing() -> str:
     return _LANDING
 
 
-@app.get("/health")
-def health() -> dict:
+@app.get("/health", response_model=HealthResponse,
+         responses={503: {"description": "Model not loaded yet."}})
+def health(response: Response) -> HealthResponse:
+    """Readiness probe.
+
+    Returns 503 until the model is actually loaded. Reporting 200 during startup
+    would tell an orchestrator to route traffic at an instance that cannot serve
+    a single recommendation.
+    """
     s = STATE.get("reco")
-    return {"status": "ok", "dataset": s.dataset if s else None, "model": "EASE",
-            "n_users": s.n_users if s else 0, "n_artists": s.n_artists if s else 0}
+    if s is None:
+        response.status_code = 503
+        response.headers["Retry-After"] = "10"
+        return HealthResponse(status="loading", dataset=None, model="EASE",
+                              n_users=0, n_artists=0)
+    return HealthResponse(status="ok", dataset=s.dataset, model="EASE",
+                          n_users=s.n_users, n_artists=s.n_artists)
 
 
-@app.get("/about")
-def about() -> dict:
+@app.get("/about", response_model=AboutResponse)
+def about() -> AboutResponse:
     """Project results + methodology (single source of truth: src.serving)."""
-    return serving.about_payload()
+    return AboutResponse(**serving.about_payload())
 
 
-@app.get("/popular-artists")
-def popular_artists(n: int = Query(50, ge=1, le=500)) -> dict:
+@app.get("/popular-artists", response_model=PopularArtistsResponse)
+def popular_artists(n: int = Query(50, ge=1, le=500)) -> PopularArtistsResponse:
+    """Most-listened artists, ranked by distinct listeners."""
     arts = serving.popular_artists(_reco(), n)
-    return {"artists": [{"artist_id": a["artist_id"], "name": a["name"]} for a in arts]}
+    return PopularArtistsResponse(
+        artists=[ArtistRef(artist_id=a["artist_id"], name=a["name"]) for a in arts]
+    )
 
 
-@app.get("/sample-users")
-def sample_users(n: int = Query(6, ge=1, le=24)) -> dict:
-    return {"users": serving.sample_users(_reco(), n)}
+@app.get("/sample-users", response_model=SampleUsersResponse)
+def sample_users(n: int = Query(6, ge=1, le=24)) -> SampleUsersResponse:
+    """A deterministic set of users with rich histories, for demo quick-picks."""
+    return SampleUsersResponse(users=serving.sample_users(_reco(), n))
 
 
-@app.get("/users/{user_id}")
-def user_profile(user_id: int, k: int = Query(12, ge=1, le=50)) -> dict:
-    return serving.user_profile(_reco(), user_id, k)
+@app.get("/users/{user_id}", response_model=UserProfileResponse)
+def user_profile(user_id: int, k: int = Query(12, ge=1, le=50)) -> UserProfileResponse:
+    """A user's most-played artists. Unknown users return 200 with `in_dataset: false`."""
+    return UserProfileResponse(**serving.user_profile(_reco(), user_id, k))
 
 
 @app.get("/recommendations/{user_id}", response_model=RecommendationResponse)

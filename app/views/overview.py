@@ -8,8 +8,12 @@ import plotly.graph_objects as go
 import streamlit as st
 from _shared import FAINT, GREEN, data_stats, get_about, page_header, style_fig
 
-# Set REPORT_URL in the deployment (e.g. the GitHub Pages URL) to link the report.
-REPORT_URL = os.environ.get("REPORT_URL", "http://localhost:8080")
+# Default to the PUBLISHED surfaces, override for local work. The previous
+# default was http://localhost:8080, which meant the deployed app shipped a dead
+# link to every visitor whenever REPORT_URL was not set on the Space -- which it
+# was not. Defaulting to production makes the common case correct by construction.
+REPORT_URL = os.environ.get("REPORT_URL", "https://chrisj1751.github.io/Sonic-Music-Recommendation-System/")
+API_URL = os.environ.get("API_URL", "https://jone1751-sonic-api.hf.space")
 
 about = get_about()
 d = data_stats()
@@ -74,3 +78,5 @@ st.markdown(
 )
 st.caption("Prefer to read it as a report? The written companion (data → methodology → results → "
            f"model exploration → limitations) is the Quarto site: [open the report]({REPORT_URL}).")
+st.caption("The same recommendations are served over HTTP by a containerised FastAPI service: "
+           f"[API explorer]({API_URL}/docs) · [`/health`]({API_URL}/health).")

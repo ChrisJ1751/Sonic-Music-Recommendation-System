@@ -1,0 +1,25 @@
+# Dependency updates. The manifests use floor-only (`>=`) pins with no lockfile,
+# so an upstream release reaches the build the moment it is published -- these
+# PRs are the mechanism that surfaces that as a reviewable change with CI run
+# against it, rather than as a surprise on the next deploy.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      python-dependencies:
+        patterns: ["*"]
+
+  # Pinned action versions go stale silently and are a supply-chain surface.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: monthly

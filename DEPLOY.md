@@ -226,13 +226,32 @@ curl -s "https://jone1751-sonic-api.hf.space/recommendations/17084?k=5"
 
 ### 5.4 Updating it later
 
+**Preferred — the GitHub Action.** Run the *Deploy API to Hugging Face Space*
+workflow (`.github/workflows/deploy-api.yml`, manual trigger). It checks out
+`main` with LFS, swaps `docker/hf-space-README.md` into `README.md`, and
+force-pushes a snapshot to the Space. Needs an `HF_TOKEN` repository secret with
+write scope. This exists so the repo keeps **one** source of truth: maintaining a
+long-lived branch that differs only in `README.md` means a manual merge and a
+conflict resolution on every single deploy.
+
+**Manual fallback**, if you would rather not add the secret:
+
 ```bash
 git checkout hf-space-api
 git merge main                     # keep this branch's README.md on conflict
 git push space-api hf-space-api:main
 ```
 
-### 5.5 Tradeoffs vs Fly
+### 5.5 Updating the Streamlit app
+
+Same repo, different Space, and no README swap needed (the project `README.md`
+already carries the Streamlit header):
+
+```bash
+git push space main
+```
+
+### 5.6 Tradeoffs vs Fly
 
 | | HF Docker Space | Fly.io |
 |---|---|---|

@@ -110,3 +110,37 @@ def test_docs_agree_on_the_test_count():
         f"docs claim {stated} tests but {defined} test functions are defined "
         "(parametrised cases only push the real count higher)"
     )
+
+
+def test_model_card_split_matches_make_split():
+    """The model card cites src/harness/make_split.py for the split fractions and
+    then states them in prose, so the two can diverge — and did: the card claimed
+    60/15/20 long after make_split.py moved to 10% holdout / 15% of the remainder.
+
+    Read with `ast` rather than by importing: make_split.py is deliberately the
+    only module that knows the locked-holdout path (AGENTS.md), and a test has no
+    business acquiring that symbol just to read two floats.
+    """
+    source = (ROOT / "src/harness/make_split.py").read_text(encoding="utf-8")
+    consts = {
+        node.targets[0].id: node.value.value
+        for node in ast.parse(source).body
+        if isinstance(node, ast.Assign)
+        and isinstance(node.targets[0], ast.Name)
+        and isinstance(node.value, ast.Constant)
+        and isinstance(node.value.value, float)
+    }
+    holdout = consts["HOLDOUT_FRACTION"]
+    test_of_remainder = consts["TEST_FRACTION"]
+
+    train_pct = (1 - holdout) * (1 - test_of_remainder) * 100
+    test_pct = (1 - holdout) * test_of_remainder * 100
+    holdout_pct = holdout * 100
+
+    card_text = (ROOT / "docs/specs/model_card.md").read_text(encoding="utf-8")
+    for share, name in ((train_pct, "train"), (test_pct, "search-test"), (holdout_pct, "holdout")):
+        rendered = f"{share:.1f}".rstrip("0").rstrip(".")
+        assert rendered in card_text, (
+            f"model card does not state the {name} share of {share:.1f}% implied by "
+            f"make_split.py (HOLDOUT_FRACTION={holdout}, TEST_FRACTION={test_of_remainder})"
+        )

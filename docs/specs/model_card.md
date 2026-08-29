@@ -41,8 +41,15 @@ reviewer who did not build it.
   user–artist listen records. Each user is truncated to their ~top-50 artists, so
   the matrix is 99.72% sparse by construction (`notebooks/00`).
 - **Split** (`src/harness/make_split.py`): a three-way per-user interaction
-  holdout — 60% train / 15% search-test / 20% locked holdout (per-user fractions;
-  reconciles to 92,834). The locked holdout is sealed and was read exactly once.
+  holdout — **~76.5% train / ~13.5% search-test / 10% locked holdout**
+  (`HOLDOUT_FRACTION = 0.1`, then `TEST_FRACTION = 0.15` of the remaining pool).
+  The locked holdout is sealed and was read exactly once.
+
+  > Earlier revisions of this card said 60/15/20. That was the original Phase-1
+  > split, and it *starved training*: holding out 20% plus a 20% search test left
+  > only ~64% to learn from, which alone cost 0.23 → 0.17 NDCG@10 on the 2k data.
+  > `make_split.py` was corrected on 2026-07-01; this card had not caught up.
+  > See `decisions.md`, 2026-07-01.
 
 ## How a recommendation is generated
 

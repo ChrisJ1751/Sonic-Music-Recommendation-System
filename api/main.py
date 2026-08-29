@@ -34,6 +34,11 @@ from src.utils import get_logger  # noqa: E402
 
 logger = get_logger("api")
 configure_logging()   # after get_logger, so its text handlers are replaced by JSON
+
+# Where the Streamlit demo lives. Defaults to the local dev server; deployments
+# set APP_URL (the Dockerfile points it at the live Space). Same pattern as
+# REPORT_URL in app/views/overview.py.
+APP_URL = os.environ.get("APP_URL", "http://localhost:8501")
 STATE: dict = {}
 
 
@@ -105,12 +110,14 @@ _LANDING = """<!doctype html><html lang="en"><head><meta charset="utf-8">
   <p>This is the <b>FastAPI serving layer</b> for the Last.fm-360K artist
   recommender (served model: <b>EASE</b>). The interactive demo — results,
   charts, and the live recommender — lives in the <b>Streamlit app</b>.</p>
-  <p><a href="http://localhost:8501">Open the app</a>
+  <p><a href="__APP_URL__">Open the app</a>
      <a class="ghost" href="/docs">API explorer (/docs)</a>
      <a class="ghost" href="/about">Results (/about)</a></p>
   <p style="margin-top:18px">Quick call:
   <code>GET /recommendations/{user_id}?k=10&amp;diversity=0.3</code></p>
 </div></body></html>"""
+
+_LANDING = _LANDING.replace("__APP_URL__", APP_URL)
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)

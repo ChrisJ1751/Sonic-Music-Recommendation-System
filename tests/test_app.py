@@ -137,3 +137,23 @@ def test_ensure_artifact_never_raises(tmp_path, monkeypatch):
     monkeypatch.setattr("src.serving.EASE_B_PATH", tmp_path / "missing.npy")
     monkeypatch.setattr(fetch, "main", lambda: (_ for _ in ()).throw(OSError("hub down")))
     _shared._ensure_ease_artifact()      # must not raise
+
+
+def test_get_state_surfaces_a_human_error_instead_of_a_traceback(monkeypatch):
+    """Every page calls get_state() first, so an unhandled exception there shows
+    a raw Python traceback to whoever opened the live demo."""
+    shown: dict[str, str] = {}
+
+    def boom():
+        raise RuntimeError("matrix.npz is missing")
+
+    monkeypatch.setattr(_shared, "_load_state", boom)
+    monkeypatch.setattr(_shared.st, "error", lambda msg, **_: shown.setdefault("error", msg))
+    monkeypatch.setattr(_shared.st, "caption", lambda msg, **_: shown.setdefault("caption", msg))
+    monkeypatch.setattr(_shared.st, "stop", lambda: (_ for _ in ()).throw(SystemExit))
+
+    with pytest.raises(SystemExit):
+        _shared.get_state()
+
+    assert "could not be loaded" in shown["error"]
+    assert "RuntimeError" in shown["caption"], "the underlying cause must still be visible"

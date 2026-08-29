@@ -74,10 +74,34 @@ def _ensure_ease_artifact() -> None:
 
 
 @st.cache_resource(show_spinner="Loading the Last.fm-360K model (once) ...")
-def get_state() -> serving.RecoState:
+def _load_state() -> serving.RecoState:
     """Load the dataset + fit/load EASE. Cached for the whole server process."""
     _ensure_ease_artifact()
     return serving.load_state()
+
+
+def get_state() -> serving.RecoState:
+    """`_load_state` with a human failure path.
+
+    Every page calls this first, so an unhandled exception here renders a raw
+    Python traceback to whoever opened the demo. Streamlit does not cache a
+    raised exception, so a rerun genuinely retries rather than replaying a
+    cached failure.
+    """
+    try:
+        return _load_state()
+    except Exception as exc:                                   # noqa: BLE001
+        st.error(
+            "**The model could not be loaded.** This app needs the Last.fm-360K "
+            "matrix and the pre-fitted EASE weights; one of them is unavailable "
+            "right now. The written report and the API are unaffected."
+        )
+        st.caption(f"`{type(exc).__name__}: {exc}`")
+        st.caption(
+            "Report: https://chrisj1751.github.io/Sonic-Music-Recommendation-System/ · "
+            "API: https://jone1751-sonic-api.hf.space/docs"
+        )
+        st.stop()
 
 
 @st.cache_data

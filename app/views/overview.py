@@ -60,7 +60,9 @@ with left:
 with right:
     with card("Served model — EASE", about["model"]["long"]):
         st.caption(about["model"]["kind"])
-        st.code(about["model"]["detail"], language="text")
+        # Inline code rather than st.code(): a code block scrolls horizontally in
+        # a narrow card and the formula reads as truncated. Inline wraps.
+        st.markdown(f"`{about['model']['detail']}`")
 
     with card("Why not deep learning?"):
         st.info(about["pivot"])

@@ -85,7 +85,7 @@ with repro:
             "`confirm_holdout`. Notebooks `00`–`08` reproduce the EDA, the harness validation, the "
             "disciplined search, and the 2k → 360K scale-up."
         )
-        st.caption("126 tests, ruff-clean, CI on every push — including a container build, so the deployed "
+        st.caption("137 tests, ruff-clean, CI on every push — including a container build, so the deployed "
                    "image cannot drift from the tested code.")
 
 with stack:

@@ -15,6 +15,60 @@ Template:
 
 ---
 
+## 2026-08-29 — The app becomes a dashboard; the report gets a drift guard
+**Decision:** Split the two reader-facing surfaces by job rather than letting
+them duplicate each other. The **Quarto report is the narrative** — read it
+through. The **Streamlit app is the product** — dense, at-a-glance, interactive.
+The app previously did both badly: every page was heading → paragraph → chart →
+paragraph, retelling the report's story in a worse medium.
+
+**How:** two primitives in `app/_shared.py` — `card()` for bordered panels and
+`kpi_row()` for metric bands — so pages compose a grid instead of hand-rolling
+containers. Overview is now a landing dashboard (KPI band, card grid, four route
+cards, the essay collapsed into an expander). Data / Results / Methodology keep
+every claim but lead with visuals and move long arguments into expanders.
+Recommendations and Artist radio put controls in one panel and results in cards,
+so moving a slider changes something visible without scrolling.
+
+**Report review — one real break, live:** `limitations.qmd` linked
+`../docs/specs/model_card.md`. Only `report/_site` is published to Pages, so
+`docs/` is not there and **every reader got a 404**. A crawl of all 19 unique
+link targets across the 7 pages found that one and nothing else; all six
+citations resolve. The navbar also had no route to the source or the API, which
+it now does.
+
+**The numbers were clean, but nothing was keeping them that way.**
+`execute: enabled: false` makes every figure in the report authored prose. Tests
+now assert the headline metrics, leaderboard, beyond-accuracy table and cutoff
+curve still match `serving.about_payload()`, and that no `.qmd` link escapes the
+published site.
+
+**Accessibility, measured not assumed.** Every palette token was checked against
+the real background with the WCAG relative-luminance formula. `FAINT` was
+**1.90:1** — it colours the bars for every model that is not EASE, i.e. the
+comparison the results page exists to make, and they were nearly invisible.
+`results.py` also drew chart *labels* in it, where the bar is 4.5:1 rather than
+3:1. Fixed, and the ratios are now computed in tests rather than trusted.
+
+**Docs that contradicted their own code.** `model_card.md` described the split as
+60/15/20 while citing `make_split.py`, which has said 10% holdout / 15% of the
+remainder since 2026-07-01. Those are not merely stale numbers — 60/15/20 is the
+split this log records as having *starved training* (0.23 → 0.17 NDCG@10 on 2k).
+A reviewer would have been told the model used the configuration the project had
+already rejected. A test now derives the shares from the constants.
+`problem_definition.md` still listed the Streamlit app and deep learning as out
+of scope; both are struck through rather than deleted, so the reversal stays
+visible.
+
+**Also:** CI now runs on feature branches (a push to `feat/**` previously
+produced no signal at all until a PR existed) with a concurrency group to cancel
+superseded runs; `get_state()` renders a human error instead of a traceback when
+the model cannot load; the landing page's second KPI band was collapsed after
+testing at 375px, where eight stacked tiles pushed every chart below the fold.
+
+**Revisit when:** the app grows a page that is genuinely narrative rather than
+interactive — at which point it belongs in the report instead.
+
 ## 2026-08-29 — Streamlit app: production pass, and a deprecation time bomb
 **Decision:** Review the Streamlit app the way the API was reviewed — by running
 it and reading its logs, not just its source — and fix what that surfaced.

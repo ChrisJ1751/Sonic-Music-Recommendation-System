@@ -95,11 +95,18 @@ rebuilding the service.
 Create a **model** repo (not a Space) on Hugging Face and upload the artifact:
 
 ```bash
-pip install huggingface_hub            # one-off, NOT a runtime dependency
-huggingface-cli login
-huggingface-cli repo create sonic-ease-360k --type model
-huggingface-cli upload jone1751/sonic-ease-360k     data/processed/lastfm360k/ease_B.npy ease_B.npy
+pip install huggingface_hub    # one-off tool, NOT a runtime dependency
+hf auth login                  # needs a token with WRITE permission
+hf upload jone1751/sonic-ease-360k data/processed/lastfm360k/ease_B.npy ease_B.npy
 ```
+
+`hf upload` creates the repo if it does not exist, **public by default** — which
+is required here, because the container fetches the artifact over plain HTTPS
+with no token. If you make it private the Fly boot will fail on a 401.
+
+(`hf` is the CLI in `huggingface_hub` >= 1.0; `huggingface-cli` still works but is
+deprecated. In PowerShell, keep each command on one line — `\` is not a line
+continuation there.)
 
 The current artifact's identity, already recorded in `fly.toml`:
 

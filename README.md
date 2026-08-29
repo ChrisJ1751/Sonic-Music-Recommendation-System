@@ -178,7 +178,10 @@ and live coverage/novelty metrics), **Methodology & limitations**; *Try it live*
 **Recommendations** and **Artist radio**.
 
 **2. The FastAPI service** — the serving/engineering layer. Containerised and
-deployed on **Fly.io**; see [`DEPLOY.md`](DEPLOY.md) section 4.
+live at **<https://jone1751-sonic-api.hf.space>**
+([`/docs`](https://jone1751-sonic-api.hf.space/docs) ·
+[`/health`](https://jone1751-sonic-api.hf.space/health)), running as a Hugging
+Face Docker Space. See [`DEPLOY.md`](DEPLOY.md) section 5.
 
 ```bash
 uvicorn api.main:app --port 8000          # loads the 360K core + EASE at startup

@@ -82,14 +82,13 @@ navbar "Live demo" button is in `report/_quarto.yml` — the one `sed` covers bo
 
 ---
 
-## 4. API -> Fly.io (paid)
+## 4. API -> Fly.io (alternative, not the deployed path)
 
-> **Fly.io requires a payment method.** The permanent free allowance is gone, so a
-> card is needed even though our config scales to zero. With `min_machines_running
-> = 0` compute bills per-second while awake (cents/month for a portfolio link) and
-> the 1 GB volume bills continuously; see <https://fly.io/pricing> for the current
-> plan minimum. This is the deployed path. Section 5 documents a Hugging Face
-> Docker Space as an alternative, but that now needs a PRO subscription.
+> **Not the deployed target — see section 5.** Kept because `fly.toml` is a
+> working, fully-configured deployment and the record of the memory sizing.
+> Fly requires a payment method: with `min_machines_running = 0` compute bills
+> per-second while awake and the 1 GB volume bills continuously. See
+> <https://fly.io/pricing>.
 
 The FastAPI service is containerised and deployed separately from the app. Unlike
 the Space, **it never refits EASE** — a refit needs ~2.5-3 GB and would OOM the
@@ -172,17 +171,24 @@ under a second, but that is a change to `src/serving.py` and was left out of sco
 
 ---
 
-## 5. API -> Hugging Face Docker Space (requires PRO)
+## 5. API -> Hugging Face Docker Space (DEPLOYED)
 
-> **Not free.** Hugging Face now restricts Gradio and Docker Spaces on the
+**Live: <https://jone1751-sonic-api.hf.space>** — `/docs`, `/health`, `/about`.
+
+> **Requires PRO.** Hugging Face restricts Gradio and Docker Spaces on the
 > `cpu-basic` tier to **PRO** subscribers (~$9/mo); only *Static* Spaces are free
 > for everyone. `hf repos create --type space --sdk docker` returns
 > **402 Payment Required** without it. The Streamlit Space in section 2 is
-> unaffected. Kept here as a documented alternative, not the deployed path.
+> unaffected.
 
-With PRO, cpu-basic is 2 vCPU / **16 GB RAM** — roomy for a service whose measured
-floor is 688 MiB. The artifact already lives on HF Hub, so the boot fetch stays
-in-network.
+cpu-basic is 2 vCPU / **16 GB RAM** — roomy for a service whose measured floor is
+688 MiB. The artifact already lives on HF Hub, so the boot fetch stays in-network.
+Chosen over Fly to consolidate the app, the model repo and the API on one
+platform, which is the surface a reviewer actually browses.
+
+**Known cost:** `cpu-basic` has **ephemeral disk** (persistent storage is a paid
+add-on), so a Space that has slept re-downloads the 514 MiB artifact on wake.
+Fly's volume avoided that. Measured build + boot from a cold push: ~100 s.
 
 **Same image as Fly.** The Dockerfile bakes `EASE_B_URL` / `EASE_B_SHA256` /
 `EASE_B_BYTES` as defaults, so the Space needs **no** variables configured. It
@@ -230,7 +236,7 @@ git push space-api hf-space-api:main
 
 | | HF Docker Space | Fly.io |
 |---|---|---|
-| Cost | PRO subscription (~$9/mo) | Card required (~$2/mo at this config) |
+| Cost | PRO subscription (~$9/mo) — **deployed here** | Card required (~$2/mo at this config) |
 | RAM | 16 GB (not configurable) | Pinned in `fly.toml` (2 GB) |
 | Artifact caching | None — re-downloads on cold start | Persistent volume |
 | Sleep | After ~48 h idle | Scale-to-zero per request |

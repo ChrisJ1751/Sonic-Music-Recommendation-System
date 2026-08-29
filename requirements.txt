@@ -4,24 +4,24 @@
 #   pip install -e ".[experiments]"  # torch (Mult-VAE, notebook 07 / src/deep.py)
 
 # Core data stack
-pandas>=2.1
-numpy>=1.26
-scipy>=1.13
-pyarrow>=14.0
+pandas>=3.0.5
+numpy>=2.4.6
+scipy>=1.17.1
+pyarrow>=25.0.1
 
 # Modeling (EASE is numpy/scipy; ALS for the MMR diversity control needs implicit)
-implicit>=0.7.2
-threadpoolctl>=3.2
+implicit>=0.7.3
+threadpoolctl>=3.6.0
 
 # App (Streamlit front-end)
-streamlit>=1.40
-plotly>=5.20
+streamlit>=1.62.0
+plotly>=7.0.0
 
 # API (FastAPI service)
-fastapi>=0.110
-uvicorn[standard]>=0.29
-pydantic>=2.6
+fastapi>=0.141.1
+uvicorn[standard]>=0.52.4
+pydantic>=2.13.4
 
 # Config
-pyyaml>=6.0
-python-dotenv>=1.0
+pyyaml>=6.0.3
+python-dotenv>=1.2.3

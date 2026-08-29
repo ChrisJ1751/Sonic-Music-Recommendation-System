@@ -90,7 +90,8 @@ def test_docs_agree_on_the_test_count():
     # docs/phase_plan.md is excluded on purpose: it is an append-only milestone
     # log, so "12 tests pass. Done 2026-06-30." is accurate history, not drift.
     quoting = {}
-    for path in [ROOT / "README.md", REPORT / "index.qmd", REPORT / "limitations.qmd"]:
+    for path in [ROOT / "README.md", REPORT / "index.qmd", REPORT / "limitations.qmd",
+                 ROOT / "app/views/methodology.py"]:
         found = {int(n) for n in re.findall(r"(\d+) tests\b", path.read_text(encoding="utf-8"))}
         if found:
             quoting[path.name] = found

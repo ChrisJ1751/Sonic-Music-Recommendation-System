@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import os
 import sys
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -123,12 +125,39 @@ def style_fig(fig: go.Figure, height: int = 340) -> go.Figure:
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         font=dict(color=TEXT, size=13),
-        title_font=dict(size=15),
+        # Set the title text explicitly. Cards supply their own heading, so most
+        # figures now have no Plotly title -- and styling `title_font` without a
+        # `title.text` makes Plotly render the string "undefined" above the plot.
+        title=dict(text=fig.layout.title.text or "", font=dict(size=15)),
         legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", y=1.12, x=0),
     )
     fig.update_xaxes(gridcolor=GRID, zerolinecolor=GRID)
     fig.update_yaxes(gridcolor=GRID, zerolinecolor=GRID)
     return fig
+
+
+# --- dashboard primitives -------------------------------------------------
+#
+# A dashboard reads as a grid of cards; a notebook reads as a scroll of prose.
+# These two helpers are what make the difference, and living here means every
+# page gets the same treatment instead of hand-rolling containers per view.
+
+@contextmanager
+def card(title: str | None = None, caption: str | None = None) -> Iterator[None]:
+    """A bordered panel with an optional title and one-line caption."""
+    with st.container(border=True):
+        if title:
+            st.markdown(f"##### {title}")
+        if caption:
+            st.caption(caption)
+        yield
+
+
+def kpi_row(items: Sequence[tuple[str, str, str | None]], columns: int | None = None) -> None:
+    """A band of bordered metric tiles. `items` is (label, value, help)."""
+    cols = st.columns(columns or len(items))
+    for col, (label, value, help_text) in zip(cols, items, strict=False):
+        col.metric(label, value, help=help_text, border=True)
 
 
 def page_header(title: str, subtitle: str) -> None:

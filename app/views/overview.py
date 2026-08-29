@@ -1,12 +1,17 @@
-"""Overview — the 30-second pitch: what the project is, the headline result, and
-where to go for the full story. Deeper pages live in the sidebar."""
+"""Overview — the dashboard landing.
+
+At-a-glance state of the project: how good the model is, what it beat, and where
+to go next. The *narrative* lives in the Quarto report; this app is the
+play-with-it surface, so this page leads with numbers and routes, and keeps prose
+in an expander rather than an essay above the fold.
+"""
 from __future__ import annotations
 
 import os
 
 import plotly.graph_objects as go
 import streamlit as st
-from _shared import FAINT, GREEN, data_stats, get_about, page_header, style_fig
+from _shared import FAINT, GREEN, MUTED, card, data_stats, get_about, kpi_row, page_header, style_fig
 
 # Default to the PUBLISHED surfaces, override for local work. The previous
 # default was http://localhost:8080, which meant the deployed app shipped a dead
@@ -20,63 +25,80 @@ d = data_stats()
 
 page_header("Sonic", "Music recommendations from listening patterns · Last.fm-360K · served model: EASE")
 
-st.markdown(
-    "A collaborative-filtering music recommender, built and evaluated the way a research team would ship one "
-    "— **frozen metrics, a leakage-safe holdout, strong baselines, and significance tests**. The served model "
-    "is **EASE**, a linear item-item autoencoder that beat tuned ALS *and* a deep VAE on real, uncapped "
-    "listening data. This app is the whole story: the data, the model comparison, the methodology, and a live demo."
-)
+# ---- band 1: how good is it -------------------------------------------------
+kpi_row([(m["label"], f"{m['value']:.3f}", m["note"]) for m in about["headline"]])
+st.caption(f"Full-catalogue ranking over all {d['n_items']:,} artists — no sampled-negative shortcuts. "
+           "Every model ranked the same frozen split.")
 
-# ---- headline metrics ----
-st.subheader("Results at a glance")
-st.caption(f"Full-catalogue ranking over all {d['n_items']:,} artists — no sampled-negative shortcuts.")
-cols = st.columns(len(about["headline"]))
-for col, m in zip(cols, about["headline"], strict=True):
-    col.metric(m["label"], f"{m['value']:.3f}", help=m["note"])
-    col.caption(m["note"])
+# ---- band 2: what it was trained on -----------------------------------------
+kpi_row([
+    ("Users", f"{d['n_users']:,}", "Listeners in the dense 360K core."),
+    ("Artists", f"{d['n_items']:,}", "The full catalogue every model ranks."),
+    ("Interactions", f"{d['nnz']:,}", "User–artist pairs with at least one play."),
+    ("Density", f"{d['density'] * 100:.2f}%", "The sparsity regime collaborative filtering lives in."),
+])
 
-st.divider()
-left, right = st.columns(2, gap="large")
+st.write("")
+
+# ---- main grid: the result, and the model that produced it ------------------
+left, right = st.columns([1.35, 1], gap="medium")
 
 with left:
-    st.markdown("#### How it stacks up")
-    st.caption("NDCG@10 on the held-out 360K split. EASE is served.")
-    lb = about["leaderboard"][::-1]
-    colors = [GREEN if r["served"] else FAINT for r in lb]
-    fig = go.Figure(go.Bar(
-        x=[r["ndcg10"] for r in lb], y=[r["model"] for r in lb], orientation="h",
-        marker_color=colors, text=[f"{r['ndcg10']:.3f}" for r in lb],
-        textposition="outside", cliponaxis=False,
-    ))
-    fig.update_layout(title="Model comparison (NDCG@10)", xaxis_range=[0, 0.26], showlegend=False)
-    st.plotly_chart(style_fig(fig, 300), width="stretch")
-    st.success(about["significance"])
+    with card("Model comparison", "NDCG@10 on the held-out 360K split. Green is the served model."):
+        lb = about["leaderboard"][::-1]
+        fig = go.Figure(go.Bar(
+            x=[r["ndcg10"] for r in lb], y=[r["model"] for r in lb], orientation="h",
+            marker_color=[GREEN if r["served"] else FAINT for r in lb],
+            text=[f"{r['ndcg10']:.3f}" for r in lb], textposition="outside", cliponaxis=False,
+        ))
+        fig.update_layout(xaxis_range=[0, 0.26], showlegend=False)
+        st.plotly_chart(style_fig(fig, 260), width="stretch")
+
+    with card("Is the gap real?"):
+        st.success(about["significance"])
 
 with right:
-    st.markdown("#### The model — EASE")
-    st.caption(about["model"]["kind"] + " · " + about["model"]["long"])
-    st.markdown(f"`{about['model']['detail']}`")
-    st.markdown("#### Why EASE, not deep learning?")
-    st.info(about["pivot"])
+    with card("Served model — EASE", about["model"]["long"]):
+        st.caption(about["model"]["kind"])
+        st.code(about["model"]["detail"], language="text")
 
-st.divider()
+    with card("Why not deep learning?"):
+        st.info(about["pivot"])
 
-# ---- dataset one-liner + routing ----
-st.subheader("Explore the whole story")
-r = st.columns(3)
-r[0].metric("Users", f"{d['n_users']:,}")
-r[1].metric("Artists", f"{d['n_items']:,}")
-r[2].metric("Interactions", f"{d['nnz']:,}")
-st.markdown(
-    "- **The data** — live EDA of the 360K core: history lengths, the long tail, concentration, and the "
-    "2k contrast that drove the pivot.\n"
-    "- **Models & results** — the full leaderboard, significance, SOTA calibration, and *live* "
-    "beyond-accuracy metrics (coverage / novelty).\n"
-    "- **Methodology & limitations** — how a recommendation is made, the evaluation discipline, and an "
-    "honest account of the limits.\n"
-    "- **Try it live** — pick a listener for real recommendations, or explore artist-to-artist radio."
+st.write("")
+
+# ---- routes: where to go next -----------------------------------------------
+st.markdown("##### Explore")
+routes = [
+    ("views/recommendations.py", "🎧", "Recommendations", "Pick a listener, see what EASE suggests next."),
+    ("views/artist_radio.py", "📻", "Artist radio", "Artist-to-artist neighbours from co-listening."),
+    ("views/data.py", "📊", "The data", "Live EDA of the 360K core and the long tail."),
+    ("views/results.py", "🏆", "Models & results", "Leaderboard, significance, coverage and novelty."),
+]
+for col, (target, icon, label, blurb) in zip(st.columns(4), routes, strict=True):
+    with col, st.container(border=True):
+        st.page_link(target, label=f"**{label}**", icon=icon)
+        st.caption(blurb)
+
+# ---- the narrative, deliberately below the fold and collapsed ---------------
+with st.expander("About this project — the one-paragraph version"):
+    st.markdown(
+        "A collaborative-filtering music recommender, built and evaluated the way a research team would "
+        "ship one — **frozen metrics, a leakage-safe holdout, strong baselines, and significance tests**. "
+        "The served model is **EASE**, a linear item-item autoencoder that beat tuned ALS *and* a deep "
+        "Mult-VAE on real, uncapped listening data.\n\n"
+        "The deliverable is not *“I trained EASE.”* It is *“I built an evaluation process trustworthy "
+        "enough that it told me to change my mind.”* **Methodology & limitations** has the discipline; "
+        "**The pivot** section of the report has the story of the reversal."
+    )
+
+st.caption(
+    f"📄 [Read the written report]({REPORT_URL}) · "
+    f"⚙️ [API explorer]({API_URL}/docs) · "
+    f"[`/health`]({API_URL}/health) — the same recommendations over HTTP, from a containerised service."
 )
-st.caption("Prefer to read it as a report? The written companion (data → methodology → results → "
-           f"model exploration → limitations) is the Quarto site: [open the report]({REPORT_URL}).")
-st.caption("The same recommendations are served over HTTP by a containerised FastAPI service: "
-           f"[API explorer]({API_URL}/docs) · [`/health`]({API_URL}/health).")
+st.markdown(
+    f"<div style='color:{MUTED};font-size:12px;margin-top:4px'>"
+    "Report = read-the-work · App = play-with-it · API = use-it-from-code</div>",
+    unsafe_allow_html=True,
+)

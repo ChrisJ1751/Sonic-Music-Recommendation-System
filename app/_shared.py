@@ -4,6 +4,7 @@ Imported by the entry point and every page in views/.
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -34,9 +35,46 @@ GRID = "rgba(255,255,255,0.07)"
 TEXT = "#eef1f6"
 
 
+# The pre-fitted EASE matrix, same artifact the API serves. Without it
+# serving.load_state() refits EASE in-process: ~1.04e12 FLOPs, measured at
+# ~85-100 s and a ~2.5-3 GB peak. Fetching the 514 MiB file instead takes ~15 s.
+# Defaults live here rather than in scripts/fetch_ease_b.py so that script keeps
+# its "no-op unless configured" contract for local development.
+EASE_B_URL = os.environ.get(
+    "EASE_B_URL",
+    "https://huggingface.co/jone1751/sonic-ease-360k/resolve/main/ease_B.npy",
+)
+EASE_B_SHA256 = os.environ.get(
+    "EASE_B_SHA256",
+    "2ab7e37dab346cd88b7c36a3b218756f9382de1bc28bbf138ea0eeb431709b37",
+)
+
+
+def _ensure_ease_artifact() -> None:
+    """Best-effort fetch of the pre-fitted EASE matrix.
+
+    Deliberately non-fatal: if the Hub is unreachable we fall through to
+    serving.load_state()'s own refit, which is slow and memory-hungry but
+    correct. A demo that boots slowly beats a demo that does not boot.
+    """
+    from src.serving import EASE_B_PATH
+
+    if Path(EASE_B_PATH).exists():
+        return
+    try:
+        os.environ.setdefault("EASE_B_URL", EASE_B_URL)
+        os.environ.setdefault("EASE_B_SHA256", EASE_B_SHA256)
+        from scripts import fetch_ease_b
+
+        fetch_ease_b.main()
+    except Exception as exc:                                   # noqa: BLE001
+        print(f"_shared | artifact fetch failed ({exc!r}); falling back to refit", flush=True)
+
+
 @st.cache_resource(show_spinner="Loading the Last.fm-360K model (once) ...")
 def get_state() -> serving.RecoState:
     """Load the dataset + fit/load EASE. Cached for the whole server process."""
+    _ensure_ease_artifact()
     return serving.load_state()
 
 

@@ -25,7 +25,10 @@ jobs:
           cache: pip
 
       - name: Install
-        run: pip install -e ".[dev]"
+        # [app] as well as [dev]: tests/test_app.py imports app/_shared.py, which
+        # imports streamlit. pytest imports every test module at collection time,
+        # so this is needed even by the job that deselects those tests.
+        run: pip install -e ".[dev,app]"
 
       - name: Lint (ruff)
         # app/ included: it is the primary deployed surface and was
@@ -89,7 +92,10 @@ jobs:
           cache: pip
 
       - name: Install
-        run: pip install -e ".[dev]"
+        # [app] as well as [dev]: tests/test_app.py imports app/_shared.py, which
+        # imports streamlit. pytest imports every test module at collection time,
+        # so this is needed even by the job that deselects those tests.
+        run: pip install -e ".[dev,app]"
 
       - name: Fetch the EASE artifact
         env:

@@ -157,3 +157,55 @@ def test_get_state_surfaces_a_human_error_instead_of_a_traceback(monkeypatch):
 
     assert "could not be loaded" in shown["error"]
     assert "RuntimeError" in shown["caption"], "the underlying cause must still be visible"
+
+
+# --- colour contrast -----------------------------------------------------
+#
+# The palette is a handful of string constants, so contrast regresses silently
+# the moment someone nudges one. WCAG 2.1: text needs 4.5:1 (1.4.3), non-text
+# graphics that carry meaning need 3:1 (1.4.11), both against the background.
+
+BACKGROUND = "#0c0d11"      # matches .streamlit/config.toml backgroundColor
+
+
+def _relative_luminance(hex_colour: str) -> float:
+    channels = [int(hex_colour[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+    linear = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+
+def _contrast(foreground: str, background: str = BACKGROUND) -> float:
+    a, b = _relative_luminance(foreground), _relative_luminance(background)
+    return (max(a, b) + 0.05) / (min(a, b) + 0.05)
+
+
+def test_background_token_matches_the_streamlit_theme():
+    """These ratios are meaningless if the assumed background is not the real one."""
+    config = (pathlib.Path(_shared.__file__).parents[1] / ".streamlit/config.toml").read_text(encoding="utf-8")
+    assert BACKGROUND in config
+
+
+@pytest.mark.parametrize("token", ["TEXT", "LABEL"])
+def test_text_tokens_meet_wcag_aa(token):
+    ratio = _contrast(getattr(_shared, token))
+    assert ratio >= 4.5, f"{token} is {ratio:.2f}:1 against the background; AA text needs 4.5:1"
+
+
+@pytest.mark.parametrize("token", ["GREEN", "PURPLE", "BLUE", "AMBER", "FAINT"])
+def test_graphic_tokens_meet_wcag_non_text_contrast(token):
+    """These colour bars, markers and lines that carry meaning. FAINT was
+    #3a4150 at 1.90:1 — the non-served models' bars were nearly invisible."""
+    ratio = _contrast(getattr(_shared, token))
+    assert ratio >= 3.0, f"{token} is {ratio:.2f}:1; meaningful non-text graphics need 3:1"
+
+
+def test_muted_is_not_used_for_text_in_the_app():
+    """MUTED is 4.23:1 — below the 4.5:1 text bar. It is fine for a reference
+    line and was briefly used for a footer, which is the mistake this pins."""
+    assert _contrast(_shared.MUTED) < 4.5, "MUTED now passes AA; promote it and delete this guard"
+    offenders = []
+    for path in [*VIEW_FILES, APP_DIR / "_shared.py"]:
+        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if "MUTED" in line and ("textfont" in line or "st.markdown" in line or "color:{MUTED}" in line):
+                offenders.append(f"{path.name}:{i}")
+    assert not offenders, f"MUTED used as text: {offenders}"

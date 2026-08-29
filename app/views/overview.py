@@ -11,7 +11,7 @@ import os
 
 import plotly.graph_objects as go
 import streamlit as st
-from _shared import FAINT, GREEN, MUTED, card, data_stats, get_about, kpi_row, page_header, style_fig
+from _shared import FAINT, GREEN, card, data_stats, get_about, kpi_row, page_header, style_fig
 
 # Default to the PUBLISHED surfaces, override for local work. The previous
 # default was http://localhost:8080, which meant the deployed app shipped a dead
@@ -99,8 +99,7 @@ st.caption(
     f"⚙️ [API explorer]({API_URL}/docs) · "
     f"[`/health`]({API_URL}/health) — the same recommendations over HTTP, from a containerised service."
 )
-st.markdown(
-    f"<div style='color:{MUTED};font-size:12px;margin-top:4px'>"
-    "Report = read-the-work · App = play-with-it · API = use-it-from-code</div>",
-    unsafe_allow_html=True,
-)
+# Was a hand-styled div in MUTED, which is 4.23:1 against the background and so
+# fails WCAG AA for text. st.caption inherits the theme's body colour (17:1) and
+# needs no unsafe_allow_html.
+st.caption("Report = read-the-work · App = play-with-it · API = use-it-from-code")

@@ -31,8 +31,12 @@ GREEN = "#1ed760"
 PURPLE = "#a880ff"      # lightened from #8b5cf6 for better contrast on dark
 BLUE = "#4aa3ff"
 AMBER = "#f0a63c"
-MUTED = "#6b7688"       # readable muted (bars/labels)
-FAINT = "#3a4150"       # non-highlighted bars
+# Contrast ratios below are against the app background (#0c0d11), measured with
+# the WCAG 2.1 relative-luminance formula. Non-text graphics need 3:1 (1.4.11);
+# text needs 4.5:1 (1.4.3). Chart labels are text, which is the stricter bar.
+MUTED = "#6b7688"       # 4.23:1 - reference lines only, NOT text
+FAINT = "#5a6478"       # 3.26:1 - non-highlighted bars/markers (was #3a4150 at 1.90:1)
+LABEL = "#8b95a8"       # 6.44:1 - text drawn inside charts
 GRID = "rgba(255,255,255,0.07)"
 TEXT = "#eef1f6"
 

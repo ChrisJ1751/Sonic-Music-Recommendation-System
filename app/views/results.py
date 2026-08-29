@@ -13,6 +13,7 @@ from _shared import (
     FAINT,
     FIG_DIR,
     GREEN,
+    LABEL,
     PURPLE,
     card,
     get_about,
@@ -111,7 +112,9 @@ with front:
             fig.add_trace(go.Scatter(
                 x=[row["coverage"]], y=[row["ndcg10"]], mode="markers+text",
                 text=[row["model"]], textposition="top center", showlegend=False,
-                textfont=dict(size=10, color=colour),
+                # Marker colour encodes the model; the label is text, so it takes
+                # the readable token rather than inheriting a 1.90:1 grey.
+                textfont=dict(size=10, color=GREEN if row["served"] else LABEL),
                 marker=dict(size=17 if row["served"] else 11, color=colour,
                             line=dict(color="#ffffff", width=1.2 if row["served"] else 0))))
         fig.update_layout(xaxis_title="catalog coverage", yaxis_title="NDCG@10",

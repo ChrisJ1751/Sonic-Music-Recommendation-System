@@ -5,6 +5,11 @@ from fastapi.testclient import TestClient
 
 from src.utils import PROCESSED_DIR
 
+# Real-artifact integration test: needs the 360K core and the 514 MiB EASE
+# matrix. Deselect with `-m "not integration"` (what CI runs); the hermetic
+# HTTP contract lives in tests/test_api_contract.py.
+pytestmark = pytest.mark.integration
+
 if not (PROCESSED_DIR / "lastfm360k" / "matrix.npz").exists():
     pytest.skip("360K core not built (run `python -m src.data_360k`)", allow_module_level=True)
 

@@ -1,3 +1,5 @@
+# Build context hygiene. Anything not needed to RUN the API is excluded, both to
+# shrink the image and to keep the context upload fast.
 .venv*/
 venv/
 .git/
@@ -5,12 +7,27 @@ venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.ruff_cache/
 .ipynb_checkpoints/
 notebooks/
-data/
-outputs/
 tests/
 docs/
+report/
+app/
+outputs/
 *.md
 !README.md
 .env
+
+# Data: exclude everything EXCEPT the three small committed 360K artifacts
+# (~7.7 MB) that the service reads at startup. Crucially this keeps the 514 MiB
+# ease_B.npy out of the image -- it is fetched at boot instead (see
+# scripts/fetch_ease_b.py), which is the whole point of the deployment design.
+data/*
+!data/processed
+data/processed/*
+!data/processed/lastfm360k
+data/processed/lastfm360k/*
+!data/processed/lastfm360k/matrix.npz
+!data/processed/lastfm360k/item_ids.parquet
+!data/processed/lastfm360k/user_ids.parquet

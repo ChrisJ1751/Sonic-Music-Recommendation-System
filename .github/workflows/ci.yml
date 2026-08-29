@@ -10,12 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # data/processed/lastfm360k/* are Git-LFS objects. Without this they
+          # check out as ~130-byte pointer stubs, which is why the API and
+          # serving tests silently skipped on every previous CI run.
+          lfs: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          # 3.12 has stable `implicit` wheels. The project also runs on 3.14
-          # locally; pin a known-good runner here.
+          # 3.12 has stable `implicit` wheels, and matches the Dockerfile so the
+          # tested interpreter is the shipped interpreter.
           python-version: "3.12"
           cache: pip
 
@@ -23,14 +28,72 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Lint (ruff)
-        run: ruff check src api tests
+        run: ruff check src api tests scripts
 
-      - name: Fetch Last.fm dataset (needed by the API test)
+      - name: Test (hermetic suite)
+        # The contract tests build a synthetic RecoState, so the whole HTTP
+        # surface is covered without the 514 MiB EASE artifact. Integration
+        # tests that need the real model run in the `integration` job below.
+        run: pytest -q -m "not integration"
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: sonic-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test — the app imports inside the image
         run: |
-          mkdir -p data/raw
-          curl -sSL -o /tmp/lastfm.zip \
-            https://files.grouplens.org/datasets/hetrec2011/hetrec2011-lastfm-2k.zip
-          unzip -o -q /tmp/lastfm.zip -d data/raw
+          docker run --rm --entrypoint python sonic-api:ci \n            -c "import api.main; print('import ok')"
 
-      - name: Test (pytest)
-        run: pytest -q
+      - name: Assert the 514 MiB artifact is NOT baked into the image
+        run: |
+          contents=$(docker run --rm --entrypoint sh sonic-api:ci -c "ls data/processed/lastfm360k/")
+          echo "$contents"
+          if echo "$contents" | grep -q "ease_B.npy"; then
+            echo "::error::ease_B.npy was baked into the image; it must be fetched at boot." && exit 1
+          fi
+
+      - name: Report image size
+        run: |
+          docker image ls sonic-api:ci
+
+  integration:
+    # Runs only once the EASE artifact is published and EASE_B_URL is set as a
+    # repository variable. Until then this job is skipped rather than failing.
+    runs-on: ubuntu-latest
+    if: vars.EASE_B_URL != ''
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: Fetch the EASE artifact
+        env:
+          EASE_B_URL: ${{ vars.EASE_B_URL }}
+          EASE_B_SHA256: ${{ vars.EASE_B_SHA256 }}
+        run: python scripts/fetch_ease_b.py
+
+      - name: Test (integration — real 360K core + EASE)
+        run: pytest -q -m integration

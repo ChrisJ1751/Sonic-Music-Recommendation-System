@@ -17,6 +17,7 @@ Worked toy example:
 Run:  pytest tests/test_eval_core.py -v
 """
 import numpy as np
+import pytest
 import scipy.sparse as sp
 
 from src.harness import eval_core
@@ -146,3 +147,98 @@ def test_split_is_deterministic_given_seed():
 
     c = eval_core.per_user_train_test_split(M, seed=7)
     assert (a.test != c.test).nnz > 0  # different seed => different held-out cells
+
+
+# ---------------------------------------------------------------------------
+# Contract edges. Added alongside the original toy tests, not in place of them:
+# eval_core.py is frozen, so these pin down behaviour that is currently implied
+# by the code but asserted nowhere.
+# ---------------------------------------------------------------------------
+
+METRICS = (
+    eval_core.precision_at_k,
+    eval_core.recall_at_k,
+    eval_core.ndcg_at_k,
+    eval_core.mrr_at_k,
+    eval_core.average_precision_at_k,
+)
+
+
+@pytest.mark.parametrize("metric", METRICS, ids=lambda f: f.__name__)
+@pytest.mark.parametrize("k", [0, -1])
+def test_non_positive_k_raises(metric, k):
+    """Every metric guards k <= 0 -- explicit in the code, previously untested."""
+    with pytest.raises(ValueError, match="k must be positive"):
+        metric(REC, REL, k)
+
+
+def test_k_larger_than_recommendation_list():
+    """k beyond the list length must not crash or index past the end."""
+    short = np.array([0, 1])          # only 2 items, relevant = {0, 2}
+    # precision divides by k (not by len), so a short list is penalised: 1 hit / 5
+    assert eval_core.precision_at_k(short, REL, 5) == 1 / 5
+    assert eval_core.recall_at_k(short, REL, 5) == 1 / 2
+    # DCG = 1/log2(2) = 1.0; IDCG over min(|rel|, k) = 2 ideal hits = 1.63093
+    assert abs(eval_core.ndcg_at_k(short, REL, 5) - 0.61315) < 1e-4
+
+
+def test_precision_divides_by_k_not_by_list_length():
+    """The documented choice: a list padded with misses is penalised, not excused."""
+    one_hit_of_two = np.array([0, 99])
+    assert eval_core.precision_at_k(one_hit_of_two, {0}, 2) == 1 / 2
+    # Same single hit, wider cutoff -> precision falls because the divisor is k.
+    assert eval_core.precision_at_k(one_hit_of_two, {0}, 10) == 1 / 10
+
+
+def test_recall_is_capped_at_one_when_all_relevant_are_retrieved():
+    assert eval_core.recall_at_k(np.array([0, 2, 5]), REL, 3) == 1.0
+
+
+def test_ndcg_decreases_monotonically_as_the_hit_sinks():
+    """One relevant item, moved down the ranking -- NDCG must strictly decrease."""
+    scores = [eval_core.ndcg_at_k(np.array(rec), {7}, 3)
+              for rec in ([7, 8, 9], [8, 7, 9], [8, 9, 7])]
+    assert scores[0] == 1.0
+    assert scores == sorted(scores, reverse=True)
+    assert len(set(scores)) == 3, "each rank must give a distinct discount"
+    # closed form: 1/log2(rank+1) normalised by IDCG of a single ideal hit (= 1.0)
+    assert abs(scores[1] - 1 / np.log2(3)) < 1e-12
+    assert abs(scores[2] - 1 / np.log2(4)) < 1e-12
+
+
+def test_second_hand_worked_ndcg_example():
+    """Independent of the module docstring's example, worked out by hand.
+
+    relevant = {1, 3, 5}; recs = [0, 1, 2, 3, 4]; k = 4.
+      top-4 = [0, 1, 2, 3]; hits at ranks 2 (item 1) and 4 (item 3).
+      DCG  = 1/log2(3) + 1/log2(5) = 0.630930 + 0.430677 = 1.061606
+      IDCG = 1/log2(2) + 1/log2(3) + 1/log2(4)   # min(3, 4) = 3 ideal hits
+           = 1.000000 + 0.630930 + 0.500000 = 2.130930
+      NDCG = 1.061606 / 2.130930 = 0.498189
+    """
+    assert abs(eval_core.ndcg_at_k(np.array([0, 1, 2, 3, 4]), {1, 3, 5}, 4) - 0.498189) < 1e-6
+
+
+def test_duplicate_recommendations_are_double_counted():
+    """CHARACTERISATION, not endorsement.
+
+    `_hits_in_top_k` counts positions, not distinct items, so a list containing
+    the same relevant item twice scores it twice -- pushing recall and NDCG above
+    their nominal ceiling of 1.0. This is unreachable in practice: every producer
+    (`models.ease_recommend`, implicit's `recommend`) ranks distinct column
+    indices via argpartition/argsort. It is pinned here so that if a future
+    candidate generator ever emits duplicates, the change in meaning is visible
+    rather than silent. eval_core.py is frozen, so this documents the behaviour
+    instead of altering it.
+    """
+    assert eval_core.recall_at_k(np.array([0, 0]), {0}, 2) == 2.0
+    assert eval_core.ndcg_at_k(np.array([0, 0]), {0}, 2) > 1.0
+    assert eval_core.precision_at_k(np.array([0, 0, 0]), {0}, 3) == 1.0
+
+
+def test_evaluate_recommendations_handles_no_scored_users():
+    empty = sp.csr_matrix((2, 4))
+    out = eval_core.evaluate_recommendations(np.empty((0, 2), dtype=int), empty,
+                                             np.array([], dtype=int), k=2)
+    assert out["n_users_scored"] == 0
+    assert out["precision@2"] == 0.0 and out["ndcg@2"] == 0.0

@@ -1,2 +1,9 @@
 *.npz filter=lfs diff=lfs merge=lfs -text
 *.parquet filter=lfs diff=lfs merge=lfs -text
+
+# Container files must stay LF. A CRLF shebang makes the container fail to start
+# with a misleading "no such file or directory", and CRLF after a `RUN ... \`
+# line continuation breaks the Dockerfile parse.
+*.sh text eol=lf
+Dockerfile text eol=lf
+.dockerignore text eol=lf

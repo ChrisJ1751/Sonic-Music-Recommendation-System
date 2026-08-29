@@ -1,34 +1,79 @@
-# Container for the recommendation API.
-# The service builds the interaction matrix and trains the chosen ALS config at
-# startup, so the image bakes in the Last.fm dataset to be self-contained.
-FROM python:3.12-slim
+# syntax=docker/dockerfile:1
 
-ENV OPENBLAS_NUM_THREADS=1 \
+# ---------------------------------------------------------------------------
+# Container for the Sonic recommendation API (EASE on Last.fm-360K).
+#
+# Base image: python:3.12-slim-bookworm
+#   * 3.12 matches .github/workflows/ci.yml, so the interpreter that runs the
+#     tests is the interpreter that ships.
+#   * `slim` is Debian/glibc: numpy, scipy and implicit all publish manylinux
+#     wheels, so nothing compiles here. Alpine's musl has no manylinux wheels and
+#     would force slow source builds against a different BLAS.
+#   * Not full `python:3.12` (~1 GB) -- the build toolchain is not needed at run
+#     time, which is also why this is a two-stage build.
+#
+# The 514 MiB EASE weight matrix is deliberately NOT in this image. It is fetched
+# and verified at boot by scripts/fetch_ease_b.py; see that file for why
+# refitting in-container is not an option (~1.04e12 FLOPs, ~2.5-3 GB peak).
+# The three small processed artifacts (~7.7 MB) ARE baked in, so the container
+# needs the network for exactly one file.
+# ---------------------------------------------------------------------------
+
+FROM python:3.12-slim-bookworm AS builder
+
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /build
+# Dependency layer first so it is cached until the manifest actually changes.
+COPY pyproject.toml README.md ./
+COPY src ./src
+RUN pip install .
+
+
+# ---------------------------------------------------------------------------
+FROM python:3.12-slim-bookworm AS runtime
+
+ENV PATH="/opt/venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    OPENBLAS_NUM_THREADS=1 \
     MKL_NUM_THREADS=1 \
     OMP_NUM_THREADS=1 \
-    PYTHONUNBUFFERED=1
+    EASE_B_CACHE_DIR=/artifacts
+
+COPY --from=builder /opt/venv /opt/venv
 
 WORKDIR /app
 
-# System deps for fetching the dataset.
-RUN apt-get update && apt-get install -y --no-install-recommends curl unzip \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Python deps first (better layer caching).
-COPY pyproject.toml README.md ./
 COPY src ./src
-RUN pip install --no-cache-dir .
-
-# App code + config.
 COPY api ./api
 COPY configs ./configs
+COPY scripts ./scripts
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
-# Bake in the dataset (the API reads data/raw at startup).
-RUN mkdir -p data/raw \
-    && curl -sSL -o /tmp/lastfm.zip \
-        https://files.grouplens.org/datasets/hetrec2011/hetrec2011-lastfm-2k.zip \
-    && unzip -o -q /tmp/lastfm.zip -d data/raw \
-    && rm /tmp/lastfm.zip
+# The committed 360K core (~7.7 MB). If the build context was checked out
+# without Git-LFS these are ~130-byte pointer stubs -- fail the build loudly
+# here rather than at runtime, since a silent pointer stub is exactly what has
+# been quietly skipping the API tests in CI.
+COPY data/processed/lastfm360k/matrix.npz ./data/processed/lastfm360k/
+COPY data/processed/lastfm360k/item_ids.parquet ./data/processed/lastfm360k/
+COPY data/processed/lastfm360k/user_ids.parquet ./data/processed/lastfm360k/
+RUN if head -c 64 data/processed/lastfm360k/matrix.npz | grep -q 'git-lfs'; then \
+        echo "ERROR: data/processed/lastfm360k/* are Git-LFS pointer stubs." >&2; \
+        echo "       Run 'git lfs pull' before 'docker build'." >&2; \
+        exit 1; \
+    fi
+
+# src.utils.get_logger() writes into outputs/logs/, and /artifacts is the volume
+# mount point. Both must exist and be writable by the unprivileged user.
+RUN useradd --create-home --uid 10001 app \
+ && mkdir -p outputs/logs /artifacts \
+ && chown -R app:app /app /artifacts \
+ && chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 8000
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

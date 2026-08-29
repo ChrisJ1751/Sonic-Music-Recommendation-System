@@ -58,6 +58,9 @@ ignore = ["E402"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "integration: needs the real 360K core + EASE artifact on disk (deselect with -m 'not integration')",
+]
 pythonpath = ["."]   # make `src` and `api` importable without setting PYTHONPATH
 filterwarnings = [
     "ignore:.*OpenBLAS is configured.*:RuntimeWarning",

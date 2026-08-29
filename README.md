@@ -146,7 +146,7 @@ jupyter lab notebooks/00_eda_interaction_matrix.ipynb
 python -m src.harness.make_split        # build the sealed per-user split
 python -m src.harness.run_session       # run the pre-registered search -> log.jsonl
 python -m src.harness.confirm_holdout   # one-time locked-holdout confirmation
-pytest                                  # 45 tests (toy-validated metrics, ALS, cold-start, API)
+pytest                                  # 97 tests (86 hermetic + 11 integration)
 ```
 
 ## Development
@@ -154,7 +154,7 @@ pytest                                  # 45 tests (toy-validated metrics, ALS, 
 ```bash
 pip install -e ".[dev]"   # editable install + dev tools (pyproject is canonical)
 ruff check src api tests  # lint
-pytest                    # 45 tests
+pytest                    # 97 tests
 docker build -t music-rec . && docker run -p 8000:8000 music-rec   # containerised API
 ```
 
@@ -177,11 +177,24 @@ Sidebar — *The project*: **Overview** (headline result + leaderboard),
 and live coverage/novelty metrics), **Methodology & limitations**; *Try it live*:
 **Recommendations** and **Artist radio**.
 
-**2. The FastAPI service** — the serving/engineering layer:
+**2. The FastAPI service** — the serving/engineering layer. Containerised and
+deployed on **Fly.io**; see [`DEPLOY.md`](DEPLOY.md) section 4.
 
 ```bash
 uvicorn api.main:app --port 8000          # loads the 360K core + EASE at startup
 ```
+
+Or via the container, which fetches the pre-fitted 514 MiB EASE matrix at boot
+rather than refitting it (a refit is ~85-100 s and ~2.5-3 GB peak, so it would OOM
+a small machine):
+
+```bash
+git lfs pull && docker build -t sonic-api .
+docker run -p 8000:8000   -e EASE_B_URL=https://huggingface.co/jone1751/sonic-ease-360k/resolve/main/ease_B.npy   -e EASE_B_SHA256=2ab7e37dab346cd88b7c36a3b218756f9382de1bc28bbf138ea0eeb431709b37   sonic-api
+```
+
+Every request emits one structured JSON log line (request id, path, status,
+duration) on stdout, and echoes `X-Request-ID`.
 
 Open **/docs** for the Swagger explorer, **/about** for the results payload, or **/**
 for the built-in HTML demo.
@@ -189,7 +202,7 @@ for the built-in HTML demo.
 ```bash
 $ curl http://127.0.0.1:8000/recommendations/17084?k=5
 {"user_id": 17084, "strategy": "ease", "k": 5, "recommendations": [
-  {"artist_id": 733, "name": "joy division", "score": 0.51}, ...]}
+  {"artist_id": 335, "name": "joy division", "score": 0.57}, ...]}
 
 # a user index past the end of the matrix falls back to popularity:
 $ curl http://127.0.0.1:8000/recommendations/99999999?k=5
@@ -238,7 +251,7 @@ The deep model climbs from *last* on 2k to *2nd* on 360K — overtaking ALS — 
 still trails EASE. It covers ~2x the catalogue (0.81 vs 0.42) at lower accuracy: the
 accuracy-vs-discovery frontier, not a free win. EASE stays served.
 
-53 tests pass, ruff clean. Three surfaces from one shared core — a **Streamlit**
+97 tests pass (86 of them with no model artifacts, so CI runs them on every push), ruff clean. Three surfaces from one shared core — a **Streamlit**
 app, a **FastAPI** service, and a **Quarto** report (see `report/`, incl. the
 *Model exploration* page). Next planned: track-level (song) recommendations, on a
 more recent dataset (e.g. the Spotify Million Playlist Dataset). See

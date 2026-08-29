@@ -52,7 +52,7 @@ python -m src.data_360k        # build the Last.fm-360K core
 python -m src.harness.make_split
 python -m src.harness.run_session
 python -m src.harness.confirm_holdout   # one-time, human-gated
-pytest                          # 53 tests, incl. toy-validated metrics
+pytest                          # 97 tests, incl. toy-validated metrics
 ```
 
 Notebooks `00`–`08` reproduce the EDA, the harness validation, the disciplined search, and the

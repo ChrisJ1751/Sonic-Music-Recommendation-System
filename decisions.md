@@ -15,6 +15,57 @@ Template:
 
 ---
 
+## 2026-08-28 — Deploy the API to Fly.io; ship the EASE matrix, never refit it in the container
+**Decision:** Deploy the FastAPI service as a public, containerised surface on
+**Fly.io** (2 GB shared-cpu-1x, scale-to-zero, persistent volume), and treat the
+514 MiB EASE weight matrix as a **published artifact fetched at boot** rather than
+something the container recomputes. `ease_B.npy` is hosted in a Hugging Face Hub
+model repo; `scripts/fetch_ease_b.py` downloads it, verifies size + SHA-256, and
+fails the boot if verification fails. The image stays artifact-free.
+
+**Why:** Refitting EASE in-container is not viable. Inverting the 11,607 x 11,607
+Gram matrix is ~1.04e12 FLOPs; measured single-threaded throughput on this
+hardware is 10-12 GFLOP/s, so a refit is **~85-100 s and ~2.5-3 GB peak** — it
+would OOM the machine it is supposed to boot. Shipping the artifact turns that
+into a one-off 514 MiB download. Loading it costs **0.11 s**.
+
+**Measured (2026-08-28), replacing estimates that were in the docs:**
+- `ease_B.npy` = 538,889,924 bytes = 11,607^2 x float32 + 128 B header.
+- `load_state()` = **5.5 s** total: `np.load` 0.11 s, `load_active_matrix` 0.08 s,
+  **ALS retrain 5.06 s** (92% of it), binarise 0.01 s.
+- Steady-state RSS after load = **688 MiB**.
+- Warm request = **~0.2 ms**.
+- Cold start, volume warm ≈ **10 s**; first boot on an empty volume adds the
+  514 MiB download.
+- This corrects `DEPLOY.md` and the `.gitignore` comment, which both claimed
+  "EASE refits at startup in ~15 s". `report/exploration.qmd` ("~a minute and a
+  few GB") was the accurate one. Both stale claims have been fixed.
+
+**Why Fly over Railway:** `fly.toml` pins memory explicitly, so the VM size is
+justified by the measured 688 MiB floor rather than left to a platform default;
+and a persistent volume caches the artifact so only the first boot pays for it.
+
+**Why the artifact is not baked into the image:** it would add 514 MiB to every
+push and pull, and couple model revisions to service rebuilds. The cost is a
+network dependency at first boot, bounded by verification and retries.
+
+**Not done, deliberately:** `src/serving.py` is untouched. The artifact is placed
+at the path it already reads, by the container entrypoint. That leaves the ALS
+retrain (5.06 s, the dominant share of startup) in place — caching its
+`item_factors` (2.8 MiB) would remove it, but that is a serving-code change and
+was ruled out of scope for this pass.
+
+**Revisit when:** the catalogue grows past ~20k items (B is O(n_items^2): 20k
+items would be a 1.6 GB matrix and the refit ~5x slower), or if the service needs
+more than one machine — at which point the per-machine 514 MiB resident copy, not
+CPU, is the scaling constraint.
+
+**Supersedes:** the 2026-06-30 kickoff entry's "Deliverable is a FastAPI JSON
+endpoint; no frontend" (already reversed in practice for the Streamlit app and
+report, per AGENTS.md, but never formally superseded here), and `DEPLOY.md`'s
+"API (optional) ... it's redundant with the app for a portfolio, so it's left
+un-deployed by default."
+
 ## 2026-07-01 — Deep-learning capstone: keep EASE served, Mult-VAE is the discovery alternative
 **Decision:** After promoting EASE, run one more experiment (`src/exp_deep_360k.py`)
 — a properly-trained deep **Mult-VAE** (600/200, 40 epochs) against the full zoo on

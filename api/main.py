@@ -16,6 +16,7 @@ Run:  uvicorn api.main:app --port 8000   then open  http://127.0.0.1:8000/
 from __future__ import annotations
 
 import os
+import time
 
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
@@ -27,21 +28,37 @@ from fastapi import FastAPI, HTTPException, Query  # noqa: E402
 from fastapi.responses import HTMLResponse  # noqa: E402
 from pydantic import BaseModel  # noqa: E402
 
+from api.logging_config import RequestLoggingMiddleware, configure_logging  # noqa: E402
 from src import serving  # noqa: E402
 from src.utils import get_logger  # noqa: E402
 
 logger = get_logger("api")
+configure_logging()   # after get_logger, so its text handlers are replaced by JSON
 STATE: dict = {}
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Re-apply: uvicorn installs its own handlers after this module is imported,
+    # so this second call is the one that wins in the container.
+    configure_logging()
+    started = time.perf_counter()
     STATE["reco"] = serving.load_state()
+    state = STATE["reco"]
+    logger.info("model loaded", extra={
+        "event": "startup",
+        "dataset": state.dataset,
+        "model": "EASE",
+        "n_users": state.n_users,
+        "n_artists": state.n_artists,
+        "load_seconds": round(time.perf_counter() - started, 2),
+    })
     yield
     STATE.clear()
 
 
 app = FastAPI(title="Sonic — Last.fm Artist Recommender", version="2.0.0", lifespan=lifespan)
+app.add_middleware(RequestLoggingMiddleware)
 
 
 class Recommendation(BaseModel):

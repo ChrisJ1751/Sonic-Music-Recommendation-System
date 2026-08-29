@@ -87,10 +87,9 @@ navbar "Live demo" button is in `report/_quarto.yml` — the one `sed` covers bo
 > **Fly.io requires a payment method.** The permanent free allowance is gone, so a
 > card is needed even though our config scales to zero. With `min_machines_running
 > = 0` compute bills per-second while awake (cents/month for a portfolio link) and
-> the 1 GB volume bills continuously, but check <https://fly.io/pricing> for the
-> current plan minimum. **For a free alternative, skip to section 5** — the image
-> is identical; only the platform config differs. `fly.toml` is kept either way as
-> the record of the memory sizing.
+> the 1 GB volume bills continuously; see <https://fly.io/pricing> for the current
+> plan minimum. This is the deployed path. Section 5 documents a Hugging Face
+> Docker Space as an alternative, but that now needs a PRO subscription.
 
 The FastAPI service is containerised and deployed separately from the app. Unlike
 the Space, **it never refits EASE** — a refit needs ~2.5-3 GB and would OOM the
@@ -173,11 +172,17 @@ under a second, but that is a change to `src/serving.py` and was left out of sco
 
 ---
 
-## 5. API -> Hugging Face Docker Space (free)
+## 5. API -> Hugging Face Docker Space (requires PRO)
 
-Free CPU tier: 2 vCPU / **16 GB RAM**, no card. Comfortable for a service whose
-measured floor is 688 MiB. The artifact already lives on HF Hub, so the boot
-fetch stays in-network.
+> **Not free.** Hugging Face now restricts Gradio and Docker Spaces on the
+> `cpu-basic` tier to **PRO** subscribers (~$9/mo); only *Static* Spaces are free
+> for everyone. `hf repos create --type space --sdk docker` returns
+> **402 Payment Required** without it. The Streamlit Space in section 2 is
+> unaffected. Kept here as a documented alternative, not the deployed path.
+
+With PRO, cpu-basic is 2 vCPU / **16 GB RAM** — roomy for a service whose measured
+floor is 688 MiB. The artifact already lives on HF Hub, so the boot fetch stays
+in-network.
 
 **Same image as Fly.** The Dockerfile bakes `EASE_B_URL` / `EASE_B_SHA256` /
 `EASE_B_BYTES` as defaults, so the Space needs **no** variables configured. It
@@ -225,14 +230,15 @@ git push space-api hf-space-api:main
 
 | | HF Docker Space | Fly.io |
 |---|---|---|
-| Cost | Free | Card required |
+| Cost | PRO subscription (~$9/mo) | Card required (~$2/mo at this config) |
 | RAM | 16 GB (not configurable) | Pinned in `fly.toml` (2 GB) |
 | Artifact caching | None — re-downloads on cold start | Persistent volume |
 | Sleep | After ~48 h idle | Scale-to-zero per request |
 
-The honest summary: HF is free and roomy but you cannot demonstrate right-sizing,
-because you are simply given 16 GB. The memory analysis in `decisions.md` and
-`fly.toml` is what makes the sizing defensible, not the platform.
+The honest summary: HF is roomy but you cannot demonstrate right-sizing, because
+you are simply given 16 GB — and it now costs more than Fly. The memory analysis
+in `decisions.md` and `fly.toml` is what makes the sizing defensible, not the
+platform. Fly is the deployed target.
 
 ---
 

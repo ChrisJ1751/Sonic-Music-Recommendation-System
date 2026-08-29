@@ -267,6 +267,23 @@ platform. Fly is the deployed target.
 
 ---
 
+## 6. Deliberately still open
+
+Named so nobody assumes they were overlooked. Each needs either a new dependency
+or a breaking URL change, and none blocks the current deployment.
+
+| Gap | Why it is open | What closing it costs |
+|---|---|---|
+| **No rate limiting** | Public unauthenticated endpoint doing numpy work per request. Warm cost is ~0.2 ms, so it is cheap to abuse but also cheap to absorb; HF sits behind its own proxy. | `slowapi` + Redis for multi-instance, or a crude in-process limiter that is wrong the moment there are two instances. |
+| **No metrics endpoint** | Structured logs give per-request latency and status, which covers debugging. There is no scrape target for p95/alerting. | `prometheus-client` and a `/metrics` route. |
+| **No lockfile** | Manifests are floor-only (`>=`) with no pins, so builds are not byte-reproducible. Dependabot now surfaces upstream releases as reviewable PRs, which is the mitigation, not the fix. | `uv lock` / `pip-compile` and a second manifest to keep in sync. |
+| **No API versioning** | Paths are unversioned (`/recommendations/...`). The report, the Streamlit app and the landing page all link to them, so adding `/v1` breaks live links today for a compatibility problem that does not exist yet. | A prefix plus redirects, and updating every link. |
+| **Two divergent manifests** | `requirements.txt` (what the Spaces install) and `pyproject.toml` core deps disagree: `matplotlib`/`seaborn` are core deps but unused at runtime (~80 MB of image); `streamlit`/`plotly` are in an extra but are the deployed surface. | Moving plotting deps to an extra — a manifest change with a blast radius across both Spaces and CI. |
+| **ALS retrains every boot** | 5.06 s of the 5.5 s `load_state()`, purely to obtain item embeddings for the MMR diversity control. Caching `item_factors` (2.8 MiB) would nearly eliminate startup. | A change to `src/serving.py`, which is out of scope by owner constraint. |
+| **`eval_core` double-counts duplicates** | `recall_at_k` returns 2.0 on `[0, 0]` with `relevant={0}`. Unreachable — every producer emits distinct indices via argpartition — and pinned by a characterisation test. | Editing the frozen harness, which is a deliberate integrity boundary. |
+
+---
+
 ## Notes & gotchas
 
 - **RAM (measured 2026-08-28):** the EASE weight matrix is a dense float32

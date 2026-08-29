@@ -17,7 +17,7 @@ jobs:
           lfs: true
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           # 3.12 has stable `implicit` wheels, and matches the Dockerfile so the
           # tested interpreter is the shipped interpreter.
@@ -83,7 +83,7 @@ jobs:
         with:
           lfs: true
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip

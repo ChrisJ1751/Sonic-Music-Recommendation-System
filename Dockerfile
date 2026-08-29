@@ -8,7 +8,8 @@
 #     tests is the interpreter that ships.
 #   * `slim` is Debian/glibc: numpy, scipy and implicit all publish manylinux
 #     wheels, so nothing compiles here. Alpine's musl has no manylinux wheels and
-#     would force slow source builds against a different BLAS.
+#     would force slow source builds against a different BLAS. Note that "no
+#     compiler needed" is not "no system libraries needed" -- see libgomp1 below.
 #   * Not full `python:3.12` (~1 GB) -- the build toolchain is not needed at run
 #     time, which is also why this is a two-stage build.
 #
@@ -57,6 +58,16 @@ ENV PATH="/opt/venv/bin:$PATH" \
 ENV EASE_B_URL=https://huggingface.co/jone1751/sonic-ease-360k/resolve/main/ease_B.npy \
     EASE_B_SHA256=2ab7e37dab346cd88b7c36a3b218756f9382de1bc28bbf138ea0eeb431709b37 \
     EASE_B_BYTES=538889924
+
+# implicit's compiled extension dlopens the OpenMP runtime at IMPORT time. The
+# wheel is manylinux so nothing is built, but libgomp.so.1 is not present in
+# python-slim, and without it `import implicit` dies with
+#   ImportError: libgomp.so.1: cannot open shared object file
+# which kills the container before uvicorn ever binds. Runtime stage only: the
+# builder does not need it.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends libgomp1 \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /opt/venv /opt/venv
 

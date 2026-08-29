@@ -12,12 +12,18 @@ __pycache__/
 notebooks/
 tests/
 docs/
-report/
-app/
 outputs/
 *.md
 !README.md
 .env
+
+# NOT excluded, deliberately: app/ and report/.
+# Hugging Face builds EVERY Space as a Docker image and honours this file, and
+# the Streamlit Space is built from this same repo. Excluding app/ here took the
+# live app down with "File does not exist: app/streamlit_app.py"; excluding
+# report/ would strip the figures the app renders (app/_shared.py resolves
+# FIG_DIR to report/figures). The API's Dockerfile simply does not COPY them, so
+# they cost build-context transfer (~3 MB) and nothing in the image.
 
 # Data: exclude everything EXCEPT the three small committed 360K artifacts
 # (~7.7 MB) that the service reads at startup. Crucially this keeps the 514 MiB

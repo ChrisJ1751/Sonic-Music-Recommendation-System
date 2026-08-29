@@ -41,3 +41,15 @@ updates:
         patterns: ["*"]
     commit-message:
       prefix: "docker"
+    ignore:
+      # The Python base image tag is pinned deliberately. 3.12 matches the CI
+      # runner, so the interpreter the tests run on is the interpreter that
+      # ships; and implicit wheel availability lags new Python releases (see
+      # AGENTS.md). Moving it is a decision to take together with CI and a green
+      # docker job, not a routine bump -- Dependabot proposed 3.12 -> 3.14 on the
+      # first run, which would have broken both properties at once.
+      # Patch-level rebuilds of the same tag still come through.
+      - dependency-name: "python"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"

@@ -42,8 +42,21 @@ ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \
     OPENBLAS_NUM_THREADS=1 \
     MKL_NUM_THREADS=1 \
-    OMP_NUM_THREADS=1 \
-    EASE_B_CACHE_DIR=/artifacts
+    OMP_NUM_THREADS=1
+# NOTE: EASE_B_CACHE_DIR is deliberately NOT set here. It is platform config:
+# fly.toml sets it to /artifacts because Fly attaches a persistent volume there.
+# Hugging Face Spaces have no persistent volume on the free tier, so leaving it
+# unset makes the artifact download straight to the path serving.py reads.
+
+# Which model artifact to serve. Baked in as a DEFAULT (not platform config) so
+# `docker run sonic-api` just works, and so platforms that cannot declare env
+# vars in config -- a Hugging Face Space, for instance -- need no manual setup.
+# Override at runtime to serve a different EASE fit; fly.toml does exactly that.
+# The digest is verified at boot, so the image states precisely which model it
+# serves and a mismatch fails the boot rather than serving the wrong weights.
+ENV EASE_B_URL=https://huggingface.co/jone1751/sonic-ease-360k/resolve/main/ease_B.npy \
+    EASE_B_SHA256=2ab7e37dab346cd88b7c36a3b218756f9382de1bc28bbf138ea0eeb431709b37 \
+    EASE_B_BYTES=538889924
 
 COPY --from=builder /opt/venv /opt/venv
 
@@ -70,9 +83,15 @@ RUN if head -c 64 data/processed/lastfm360k/matrix.npz | grep -q 'git-lfs'; then
 
 # src.utils.get_logger() writes into outputs/logs/, and /artifacts is the volume
 # mount point. Both must exist and be writable by the unprivileged user.
+# Two directories are written at runtime: outputs/logs (src.utils.get_logger)
+# and data/processed/lastfm360k (where scripts/fetch_ease_b.py lands the artifact
+# when no cache dir is configured). Fly runs the container as root and the
+# entrypoint drops to `app`; Hugging Face Spaces may run it as an arbitrary UID,
+# so make those writable by any user rather than betting on one.
 RUN useradd --create-home --uid 10001 app \
  && mkdir -p outputs/logs /artifacts \
  && chown -R app:app /app /artifacts \
+ && chmod -R a+rwX /app/outputs /app/data /artifacts \
  && chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 8000

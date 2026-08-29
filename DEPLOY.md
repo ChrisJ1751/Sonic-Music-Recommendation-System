@@ -82,7 +82,15 @@ navbar "Live demo" button is in `report/_quarto.yml` — the one `sed` covers bo
 
 ---
 
-## 4. API -> Fly.io
+## 4. API -> Fly.io (paid)
+
+> **Fly.io requires a payment method.** The permanent free allowance is gone, so a
+> card is needed even though our config scales to zero. With `min_machines_running
+> = 0` compute bills per-second while awake (cents/month for a portfolio link) and
+> the 1 GB volume bills continuously, but check <https://fly.io/pricing> for the
+> current plan minimum. **For a free alternative, skip to section 5** — the image
+> is identical; only the platform config differs. `fly.toml` is kept either way as
+> the record of the memory sizing.
 
 The FastAPI service is containerised and deployed separately from the app. Unlike
 the Space, **it never refits EASE** — a refit needs ~2.5-3 GB and would OOM the
@@ -162,6 +170,69 @@ Of the 5.5 s `load_state`, **5.06 s is the ALS retrain** (`np.load` of the 514 M
 matrix is only 0.11 s). ALS is trained purely to supply item embeddings for the MMR
 diversity control. Caching its `item_factors` (2.8 MiB) would cut startup to well
 under a second, but that is a change to `src/serving.py` and was left out of scope.
+
+---
+
+## 5. API -> Hugging Face Docker Space (free)
+
+Free CPU tier: 2 vCPU / **16 GB RAM**, no card. Comfortable for a service whose
+measured floor is 688 MiB. The artifact already lives on HF Hub, so the boot
+fetch stays in-network.
+
+**Same image as Fly.** The Dockerfile bakes `EASE_B_URL` / `EASE_B_SHA256` /
+`EASE_B_BYTES` as defaults, so the Space needs **no** variables configured. It
+leaves `EASE_B_CACHE_DIR` unset, so the artifact downloads straight to the path
+`serving.py` reads — correct here, because the free tier has no persistent volume.
+
+### 5.1 Why a separate branch
+
+A Space declares its SDK in its **README metadata**, and this repo's `README.md`
+already carries the *Streamlit* Space header (section 2). One repo cannot carry
+two different Space headers on the same branch, so the API Space is pushed from a
+branch whose only difference is `README.md`, generated from
+`docker/hf-space-README.md`.
+
+### 5.2 Create and push
+
+```bash
+hf repos create sonic-api --type space --sdk docker
+git remote add space-api https://huggingface.co/spaces/jone1751/sonic-api
+git push space-api hf-space-api:main
+```
+
+The push carries the Git-LFS objects (the 7.7 MB processed core), which the
+Dockerfile needs — its LFS-pointer guard fails the build otherwise.
+
+Watch the build in the Space's **Logs** tab. First boot downloads the 514 MiB
+artifact; you should see `fetch_ease_b | verified` then `model loaded`.
+
+### 5.3 Check it
+
+```bash
+curl -s https://jone1751-sonic-api.hf.space/health
+curl -s "https://jone1751-sonic-api.hf.space/recommendations/17084?k=5"
+```
+
+### 5.4 Updating it later
+
+```bash
+git checkout hf-space-api
+git merge main                     # keep this branch's README.md on conflict
+git push space-api hf-space-api:main
+```
+
+### 5.5 Tradeoffs vs Fly
+
+| | HF Docker Space | Fly.io |
+|---|---|---|
+| Cost | Free | Card required |
+| RAM | 16 GB (not configurable) | Pinned in `fly.toml` (2 GB) |
+| Artifact caching | None — re-downloads on cold start | Persistent volume |
+| Sleep | After ~48 h idle | Scale-to-zero per request |
+
+The honest summary: HF is free and roomy but you cannot demonstrate right-sizing,
+because you are simply given 16 GB. The memory analysis in `decisions.md` and
+`fly.toml` is what makes the sizing defensible, not the platform.
 
 ---
 

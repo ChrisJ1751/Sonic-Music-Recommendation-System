@@ -1,56 +1,40 @@
-# Fly.io deployment for the Sonic recommendation API (EASE on Last.fm-360K).
+# fly.toml app configuration file generated for sonic-recommender-api on 2026-08-28T21:28:32-04:00
 #
-# Sizing is measured, not guessed. With the pre-fitted EASE matrix in place the
-# process settles at ~688 MiB RSS (514 MiB of that is the dense float32 11,607^2
-# weight matrix). 1 GB would technically fit but leaves ~300 MiB of headroom;
-# 2 GB is the deliberate choice. The failure mode that argues for headroom: if
-# the artifact were ever missing, src/serving.py refits EASE in-process at
-# ~2.5-3 GB peak. The entrypoint prevents that by failing the boot instead --
-# see scripts/fetch_ease_b.py -- but the headroom is cheap insurance.
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
-# Rename `app` before first deploy: Fly app names are globally unique.
 
-app = "sonic-recommender-api"
-primary_region = "lhr"
+app = 'sonic-recommender-api'
+primary_region = 'lhr'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  PORT = "8000"
-  # The artifact is public, so it is plain config rather than a fly secret.
-  EASE_B_URL = "https://huggingface.co/jone1751/sonic-ease-360k/resolve/main/ease_B.npy"
-  EASE_B_SHA256 = "2ab7e37dab346cd88b7c36a3b218756f9382de1bc28bbf138ea0eeb431709b37"
-  EASE_B_BYTES = "538889924"
-  EASE_B_CACHE_DIR = "/artifacts"
+  EASE_B_BYTES = '538889924'
+  EASE_B_CACHE_DIR = '/artifacts'
+  EASE_B_SHA256 = '2ab7e37dab346cd88b7c36a3b218756f9382de1bc28bbf138ea0eeb431709b37'
+  EASE_B_URL = 'https://huggingface.co/jone1751/sonic-ease-360k/resolve/main/ease_B.npy'
+  PORT = '8000'
 
-# The 514 MiB artifact is downloaded once and kept here, so only the very first
-# boot pays for it. Mounted at /artifacts rather than over the data directory:
-# a volume mounted on data/processed/lastfm360k would shadow the three small
-# artifacts baked into the image.
 [[mounts]]
-  source = "sonic_artifacts"
-  destination = "/artifacts"
+  source = 'sonic_artifacts'
+  destination = '/artifacts'
 
 [http_service]
   internal_port = 8000
   force_https = true
-  # Scale to zero between visits. A cold start is ~10 s with the volume warm
-  # (~0.7 s import + ~5.5 s load_state + machine start), which is fine for a
-  # portfolio link. Set min_machines_running = 1 to remove cold starts entirely.
-  auto_stop_machines = "stop"
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
 
   [[http_service.checks]]
-    path = "/health"
-    interval = "30s"
-    timeout = "5s"
-    # Generous: the first boot on a fresh volume downloads 514 MiB before the
-    # server binds. Later boots read it from the volume in ~0.1 s.
-    grace_period = "180s"
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '3m0s'
+    path = '/health'
 
 [[vm]]
-  memory = "2gb"
-  cpu_kind = "shared"
+  memory = '2gb'
+  cpu_kind = 'shared'
   cpus = 1
+  memory_mb = 2048

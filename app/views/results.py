@@ -31,7 +31,7 @@ fig = go.Figure(go.Bar(
     textposition="outside", cliponaxis=False,
 ))
 fig.update_layout(title="Model comparison (NDCG@10)", xaxis_range=[0, 0.26], showlegend=False)
-st.plotly_chart(style_fig(fig, 300), use_container_width=True)
+st.plotly_chart(style_fig(fig, 300), width="stretch")
 st.success(about["significance"])
 
 st.divider()
@@ -58,7 +58,7 @@ with lc:
                       annotation_font=dict(size=9, color=color))
     fig.update_layout(title="EASE across cutoffs vs published SOTA (dotted = SOTA at its reported cutoff)",
                       xaxis_title="cutoff k", yaxis_title="metric value", yaxis_range=[0.15, 0.57])
-    st.plotly_chart(style_fig(fig, 340), use_container_width=True)
+    st.plotly_chart(style_fig(fig, 340), width="stretch")
 with rc:
     st.markdown("#### Reported metrics")
     st.caption("Full-ranking, macro-averaged over scored users.")
@@ -78,7 +78,7 @@ b1, b2 = st.columns([1, 1], gap="large")
 with b1:
     badf = pd.DataFrame(ba)[["model", "ndcg10", "coverage", "novelty"]]
     st.dataframe(
-        badf, hide_index=True, use_container_width=True,
+        badf, hide_index=True, width="stretch",
         column_config={
             "model": st.column_config.TextColumn("model"),
             "ndcg10": st.column_config.NumberColumn("NDCG@10", format="%.3f"),
@@ -101,7 +101,7 @@ with b2:
     fig.update_layout(title="Accuracy vs coverage on 360K",
                       xaxis_title="catalog coverage", yaxis_title="NDCG@10",
                       xaxis_range=[-0.03, 0.92], yaxis_range=[0.02, 0.25])
-    st.plotly_chart(style_fig(fig, 320), use_container_width=True)
+    st.plotly_chart(style_fig(fig, 320), width="stretch")
 st.info("EASE ranks best; Mult-VAE reaches ~2x the catalogue (0.81 vs 0.42) at lower NDCG@10. The "
         "`diversity` slider on the **Recommendations** page is the runtime lever on the same trade-off.")
 
@@ -117,4 +117,4 @@ for col, fname, cap in [
 ]:
     p = FIG_DIR / fname
     if p.exists():
-        col.image(str(p), caption=cap, use_container_width=True)
+        col.image(str(p), caption=cap, width="stretch")

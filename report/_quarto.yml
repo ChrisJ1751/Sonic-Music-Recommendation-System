@@ -14,6 +14,11 @@ website:
     right:
       - text: "Live demo"
         href: "https://jone1751-sonic.hf.space"
+      - text: "API"
+        href: "https://jone1751-sonic-api.hf.space/docs"
+      - icon: github
+        href: "https://github.com/ChrisJ1751/Sonic-Music-Recommendation-System"
+        aria-label: "Source on GitHub"
   sidebar:
     style: docked
     background: dark

@@ -85,4 +85,4 @@ with an interactive recommender and artist-to-artist radio. Both import one shar
 - **Data:** Last.fm-360K, filtered to a recommendable core of 39,499 users × 11,607 artists (1.68M interactions).
 - **Evaluation:** frozen `eval_core.py`, per-user leakage-safe holdout, 5,000-resample paired bootstrap for significance.
 - **Serving:** one shared `src/serving.py` behind a Streamlit app and a FastAPI service.
-- **Rigor:** deterministic given seeds, 108 tests, ruff-clean, CI on every push.
+- **Rigor:** deterministic given seeds, 126 tests, ruff-clean, CI on every push.

@@ -15,6 +15,50 @@ Template:
 
 ---
 
+## 2026-08-29 — Streamlit app: production pass, and a deprecation time bomb
+**Decision:** Review the Streamlit app the way the API was reviewed — by running
+it and reading its logs, not just its source — and fix what that surfaced.
+
+**The one that mattered:** all 14 chart/table/button calls used
+`use_container_width`, which Streamlit deprecated with removal "after
+2025-12-31" — a date that has **already passed**. `requirements.txt` pins
+`streamlit>=1.62.0` with no upper bound, so the release that finally removes it
+would have broken the live app with no code change on our side. Replaced with
+`width="stretch"` throughout, and a test now fails if it comes back. This is the
+concrete cost of floor-only pins: the breakage arrives on someone else's
+schedule.
+
+**Also fixed:**
+- **BLAS threads were never pinned in the app.** `src/serving.py` pins them, but
+  Streamlit has already imported numpy by then, so the `setdefault` was a no-op
+  and OpenBLAS started a 12-thread pool (visible as a warning on every boot).
+  Pinned at the entry point, before any library import. The project claims
+  determinism; this makes the claim true on the app surface too.
+- **A caption that lied.** "Their 50 most-played artists" sat above a table
+  showing `k` (12) rows — it printed the history length, not the row count.
+- **Quick-picks rescanned the full 39,499 x 11,607 matrix on every rerun**
+  (~9 ms). Cached; the result is seeded and deterministic, so nothing changes
+  but the cost.
+
+**What was already right, and left alone:** figure rendering is guarded with
+`p.exists()`; the user-id input is bounded to `n_users - 1` so the cold-start
+path is unreachable from the UI; views never reach past `serving.py`. Several
+bugs hypothesised from reading the code turned out not to exist under real data
+— no duplicate artist names in the top-200 dropdown, no negative scores to break
+the progress bars — and were not "fixed".
+
+**Verified by use, not inspection:** every page driven in a browser, server logs
+clean (18 warnings before, zero after), console free of app-originated errors.
+A residual Plotly `-Infinity` text-placement warning during container layout is
+a rendering artifact, not a data problem — `log10` never sees a zero (minimum
+listeners per artist is 9) and the charts render correctly.
+
+**Coverage:** `app/` had **zero** tests despite being the primary deployed
+surface. Now 11, including source-level guards that pin the three bugs that
+actually reached production (localhost defaults, the deprecated API, BLAS
+ordering). Each guard was mutation-checked against a synthetic bad source, so
+none of them is a test that cannot fail.
+
 ## 2026-08-28 — Production-readiness pass on the serving layer
 **Decision:** Before calling the API "shipped", fix the things that were wrong in
 a way only a live deployment exposes. Four real defects, all found by probing the

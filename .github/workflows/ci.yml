@@ -9,7 +9,7 @@ jobs:
   lint-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # data/processed/lastfm360k/* are Git-LFS objects. Without this they
           # check out as ~130-byte pointer stubs, which is why the API and
@@ -17,7 +17,7 @@ jobs:
           lfs: true
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           # 3.12 has stable `implicit` wheels, and matches the Dockerfile so the
           # tested interpreter is the shipped interpreter.
@@ -25,7 +25,10 @@ jobs:
           cache: pip
 
       - name: Install
-        run: pip install -e ".[dev]"
+        # [app] as well as [dev]: tests/test_app.py imports app/_shared.py, which
+        # imports streamlit. pytest imports every test module at collection time,
+        # so this is needed even by the job that deselects those tests.
+        run: pip install -e ".[dev,app]"
 
       - name: Lint (ruff)
         # app/ included: it is the primary deployed surface and was
@@ -41,14 +44,14 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           lfs: true
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       - name: Build image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: false
@@ -79,17 +82,20 @@ jobs:
     runs-on: ubuntu-latest
     if: vars.EASE_B_URL != ''
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           lfs: true
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
 
       - name: Install
-        run: pip install -e ".[dev]"
+        # [app] as well as [dev]: tests/test_app.py imports app/_shared.py, which
+        # imports streamlit. pytest imports every test module at collection time,
+        # so this is needed even by the job that deselects those tests.
+        run: pip install -e ".[dev,app]"
 
       - name: Fetch the EASE artifact
         env:

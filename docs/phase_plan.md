@@ -79,7 +79,7 @@ more powerful model can beat the chosen one.
 **Exit:** On 360K the ranking flipped — **EASE** (linear autoencoder) is served,
 significantly beating ALS. A deep **Mult-VAE** gauntlet confirmed capacity pays off
 with data (it climbs from last to 2nd) but still loses to EASE on accuracy, while
-reaching ~2x the catalogue — the accuracy-vs-discovery frontier. 108 tests pass.
+reaching ~2x the catalogue — the accuracy-vs-discovery frontier. 126 tests pass.
 **Done 2026-07-01.**
 
 ## If we slip

@@ -1,4 +1,5 @@
-# The deployed Streamlit app URL, referenced in the report as {{< var app_url >}}.
-# For local use this is localhost:8501; before publishing, set it to your Hugging
-# Face Space URL (e.g. https://your-name-sonic.hf.space) and re-render.
+# URLs referenced in the report as {{< var name >}}. Keep them here rather
+# than inline so a redeploy to a different host is a one-file change.
 app_url: "https://jone1751-sonic.hf.space"
+api_url: "https://jone1751-sonic-api.hf.space"
+repo_url: "https://github.com/ChrisJ1751/Sonic-Music-Recommendation-System"

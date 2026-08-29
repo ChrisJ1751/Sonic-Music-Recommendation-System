@@ -7,7 +7,18 @@ all model logic is in src/serving.py (shared with the FastAPI service). Run with
 """
 from __future__ import annotations
 
-import streamlit as st
+import os
+
+# Pin BLAS threads BEFORE anything imports numpy. src/serving.py does the same,
+# but by the time Streamlit imports it numpy is already initialised, so the
+# setdefault there is a no-op and OpenBLAS spins up a 12-thread pool -- which is
+# what the "OpenBLAS is configured to use 12 threads" warning in the logs was.
+# Determinism is a claim this project makes; make it true at the entry point.
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+
+import streamlit as st  # noqa: E402
 
 st.set_page_config(page_title="Sonic — Music Recommender", layout="wide")
 

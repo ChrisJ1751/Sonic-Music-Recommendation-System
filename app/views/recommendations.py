@@ -14,11 +14,18 @@ state = get_state()
 page_header("Recommendations", "Pick a listener — see what they play, and what the model suggests next.")
 
 # --- quick-pick sample users ---
-samples = serving.sample_users(state, 6)
+@st.cache_data(show_spinner=False)
+def _quick_picks() -> list[dict]:
+    """Deterministic (seeded), so caching changes nothing except the cost:
+    uncached this rescanned the full 39,499 x 11,607 matrix on every rerun."""
+    return serving.sample_users(state, 6)
+
+
+samples = _quick_picks()
 st.caption("Quick-pick a listener with a rich history:")
 picks = st.columns(len(samples))
 for col, u in zip(picks, samples, strict=True):
-    if col.button(f"User {u['user_id']}\n{u['top_artist']}", use_container_width=True):
+    if col.button(f"User {u['user_id']}\n{u['top_artist']}", width="stretch"):
         st.session_state["uid"] = u["user_id"]
 
 # --- controls ---
@@ -56,11 +63,14 @@ with left:
     if not prof["in_dataset"]:
         st.warning("That user id is not in the dataset — they would get popularity-based cold-start recs.")
     else:
-        st.caption(f"Their {prof['n_artists']} most-played artists · bar = plays, relative to their #1")
+        # Show the count actually rendered, not the history size -- the table has
+        # `k` rows, so "Their 50 most-played artists" above 12 rows was a lie.
+        st.caption(f"Their top {len(prof['top_artists'])} of {prof['n_artists']} artists "
+                   f"· bar = plays, relative to their #1")
         df = pd.DataFrame(prof["top_artists"])
         df.index = range(1, len(df) + 1)
         st.dataframe(
-            df[["name", "plays"]], use_container_width=True, height=_table_height(len(df)),
+            df[["name", "plays"]], width="stretch", height=_table_height(len(df)),
             column_config={
                 "_index": st.column_config.NumberColumn("#", width="small"),
                 "name": st.column_config.TextColumn("artist"),
@@ -77,7 +87,7 @@ with right:
     rdf["strength"] = 100.0 * rdf["score"] / top_score
     rdf.index = range(1, len(rdf) + 1)
     st.dataframe(
-        rdf[["name", "strength"]], use_container_width=True, height=_table_height(len(rdf)),
+        rdf[["name", "strength"]], width="stretch", height=_table_height(len(rdf)),
         column_config={
             "_index": st.column_config.NumberColumn("#", width="small"),
             "name": st.column_config.TextColumn("artist (new to them)"),

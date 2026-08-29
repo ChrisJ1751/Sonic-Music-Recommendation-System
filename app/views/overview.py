@@ -30,13 +30,13 @@ kpi_row([(m["label"], f"{m['value']:.3f}", m["note"]) for m in about["headline"]
 st.caption(f"Full-catalogue ranking over all {d['n_items']:,} artists — no sampled-negative shortcuts. "
            "Every model ranked the same frozen split.")
 
-# ---- band 2: what it was trained on -----------------------------------------
-kpi_row([
-    ("Users", f"{d['n_users']:,}", "Listeners in the dense 360K core."),
-    ("Artists", f"{d['n_items']:,}", "The full catalogue every model ranks."),
-    ("Interactions", f"{d['nnz']:,}", "User–artist pairs with at least one play."),
-    ("Density", f"{d['density'] * 100:.2f}%", "The sparsity regime collaborative filtering lives in."),
-])
+# Dataset shape as one compact line rather than a second tile band. Tiles stack
+# on narrow viewports, and eight full-width number cards pushed everything below
+# the fold on a phone -- these numbers also get full tiles on the Data page.
+st.caption(
+    f"Trained on **{d['n_users']:,} users** × **{d['n_items']:,} artists** "
+    f"({d['nnz']:,} interactions, {d['density'] * 100:.2f}% dense)."
+)
 
 st.write("")
 

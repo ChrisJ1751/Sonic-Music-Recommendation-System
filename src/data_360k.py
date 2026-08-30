@@ -1,7 +1,7 @@
-"""data_360k.py — load and preprocess the Last.fm-360K dataset.
+"""data_360k.py, load and preprocess the Last.fm-360K dataset.
 
 The 360K dataset (Celma) is user_sha1 / artist_mbid / artist_name / plays over
-17.6M rows — real, *uncapped* listening histories (unlike the top-50-capped
+17.6M rows, real, *uncapped* listening histories (unlike the top-50-capped
 HetRec 2k set). We reduce it to a dense, recommendable core and cache the result
 so downstream code (the same frozen harness) can load it instantly.
 
@@ -36,7 +36,7 @@ USERS_PATH = CACHE_DIR / "user_ids.parquet"
 ITEMS_PATH = CACHE_DIR / "item_ids.parquet"
 
 # On a fresh cloud deploy (e.g. a Hugging Face Space) the ~7.5 MB processed cache
-# may not be present locally — Git LFS files don't always materialise. Fall back to
+# may not be present locally, Git LFS files don't always materialise. Fall back to
 # fetching it from the repo's public GitHub LFS media host. Override via env var.
 DATA_URL_BASE = os.environ.get(
     "SONIC_DATA_URL",
@@ -110,7 +110,7 @@ def save_cache(im: InteractionMatrix) -> None:
 
 
 def _is_lfs_pointer(path: Path) -> bool:
-    """A Git LFS pointer is a tiny text stub, not the real binary — happens when a
+    """A Git LFS pointer is a tiny text stub, not the real binary, happens when a
     cloud host checks out the repo without materialising LFS objects."""
     try:
         with open(path, "rb") as fh:

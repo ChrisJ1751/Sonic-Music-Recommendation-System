@@ -1,7 +1,7 @@
-"""run_session.py — the disciplined search SESSION (pre-registered, bounded).
+"""run_session.py, the disciplined search SESSION (pre-registered, bounded).
 
 This is the autoresearch loop made auditable. Every config is written down here
-FIRST, with a one-line reason, BEFORE any results are seen — so the search is a
+FIRST, with a one-line reason, BEFORE any results are seen. So the search is a
 small set of pre-registered comparisons, not an open roam that would manufacture
 a lucky winner at this sparsity (see src/harness/program.md). Each config is
 validated against `search_config.BOUNDS` and scored over several seeds by the
@@ -71,7 +71,7 @@ def print_leaderboard(rows: list[dict], k: int) -> None:
     rows = sorted(rows, key=lambda r: r["metrics"][f"ndcg@{k}"]["mean"], reverse=True)
     print("\n" + RULE)
     print(f"SEARCH SESSION LEADERBOARD  (ranked by NDCG@{k} mean over {rows[0]['n_seeds']} seeds)"
-          "  — PROPOSALS, NOT PROMOTIONS")
+          " , PROPOSALS, NOT PROMOTIONS")
     print(RULE)
     hdr = (f"{'#':<3}{'tag':<22}{'fac':>4}{'reg':>8}{'it':>4}{'alpha':>7}  "
            f"{'NDCG@'+str(k):<18}{'P@'+str(k):>9}{'R@'+str(k):>9}{'cov':>7}")

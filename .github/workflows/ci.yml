@@ -69,7 +69,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Smoke test — the app imports inside the image
+      - name: Smoke test, the app imports inside the image
         run: |
           docker run --rm --entrypoint python sonic-api:ci -c "import api.main; print(chr(111)+chr(107))"
 
@@ -112,5 +112,5 @@ jobs:
           EASE_B_SHA256: ${{ vars.EASE_B_SHA256 }}
         run: python scripts/fetch_ease_b.py
 
-      - name: Test (integration — real 360K core + EASE)
+      - name: Test (integration, real 360K core + EASE)
         run: pytest -q -m integration

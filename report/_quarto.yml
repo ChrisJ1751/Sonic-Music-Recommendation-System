@@ -1,7 +1,7 @@
 project:
   type: website
   output-dir: _site
-  title: "Sonic — A Disciplined Music Recommender"
+  title: "Sonic, A Disciplined Music Recommender"
 
 website:
   title: "Sonic"
@@ -38,7 +38,7 @@ website:
       - text: "Limitations & ethics"
         href: limitations.qmd
   page-footer:
-    left: "Sonic — portfolio project (target: Spotify DS)."
+    left: "Sonic, a disciplined music recommender."
     right: "Served model: EASE on Last.fm-360K. Built with Quarto."
 
 format:

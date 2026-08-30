@@ -1,8 +1,8 @@
 """Guards for the Quarto report and the docs that quote its numbers.
 
 report/_quarto.yml sets `execute: enabled: false`, so every figure in the report
-is authored prose rather than computed output. That is a deliberate choice — the
-render is fast and deterministic — but it means the numbers can silently drift
+is authored prose rather than computed output. That is a deliberate choice, the
+render is fast and deterministic, but it means the numbers can silently drift
 away from the model they describe. These tests are the tripwire for that.
 """
 from __future__ import annotations
@@ -29,7 +29,7 @@ def _mentioned(value: float, text: str) -> bool:
 
 
 def test_report_files_exist():
-    assert QMD, "no .qmd files found — did the report move?"
+    assert QMD, "no .qmd files found, did the report move?"
 
 
 def test_headline_metrics_match_the_served_model(report_text):
@@ -114,7 +114,7 @@ def test_docs_agree_on_the_test_count():
 
 def test_model_card_split_matches_make_split():
     """The model card cites src/harness/make_split.py for the split fractions and
-    then states them in prose, so the two can diverge — and did: the card claimed
+    then states them in prose, so the two can diverge, and did: the card claimed
     60/15/20 long after make_split.py moved to 10% holdout / 15% of the remainder.
 
     Read with `ast` rather than by importing: make_split.py is deliberately the

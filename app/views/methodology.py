@@ -1,4 +1,4 @@
-"""Methodology & limitations — the discipline that makes the numbers trustworthy,
+"""Methodology & limitations, the discipline that makes the numbers trustworthy,
 how a recommendation is actually generated, and an honest account of the limits.
 
 Card-based rather than prose: each claim is a panel you can scan, with the
@@ -12,12 +12,12 @@ from _shared import card, get_about, page_header
 about = get_about()
 
 page_header("Methodology & limitations",
-            "Why the numbers are trustworthy — and an honest account of where the model falls short.")
+            "Why the numbers are trustworthy, and an honest account of where the model falls short.")
 
 # ---- the serving path, as a pipeline ----------------------------------------
 st.markdown("##### How a recommendation is generated")
 steps = [
-    ("1 · Look up", "Find the user's row in the binarised interaction matrix — who they have listened to."),
+    ("1 · Look up", "Find the user's row in the binarised interaction matrix, who they have listened to."),
     ("2 · Score", "EASE scores all 11,607 artists in one sparse mat-vec: `scores = x · B`, where `B` is the "
                   "learned item-item weight matrix."),
     ("3 · Mask", "Zero out artists the user has already played, so every recommendation is genuinely new."),
@@ -28,7 +28,7 @@ for col, (title, body) in zip(st.columns(4), steps, strict=True):
     with col, st.container(border=True):
         st.markdown(f"**{title}**")
         st.caption(body)
-st.caption("Unknown users — past the end of the matrix — fall back to a popularity recommender. That is the "
+st.caption("Unknown users, past the end of the matrix, fall back to a popularity recommender. That is the "
            "safe cold-start path, and the API reports it as `cold_start_popularity` rather than hiding it.")
 
 st.write("")
@@ -54,11 +54,11 @@ limits = [
      "achievable recall and is a property of the data, not a bug."),
     ("Popularity bias / feedback loops",
      "Like all CF, the model leans toward already-popular artists; if its outputs fed back into training it "
-     "would reinforce that. Not mitigated here — offline, single snapshot."),
+     "would reinforce that. Not mitigated here, offline, single snapshot."),
     ("No temporal signal",
      "The snapshot has no usable timestamps, so the model cannot capture trend or recency."),
     ("Stale data",
-     "Last.fm-360K is a research snapshot of past listening — not today's catalogue or taste."),
+     "Last.fm-360K is a research snapshot of past listening, not today's catalogue or taste."),
     ("No content features",
      "Pure collaborative filtering. A production system would blend in audio/tag features to reach genuine "
      "cold-start artists that CF cannot."),
@@ -82,10 +82,10 @@ with repro:
     with card("Reproducibility", "Deterministic given seeds; BLAS pinned to one thread."):
         st.markdown(
             "The full pipeline rebuilds from `python -m src.data_360k` → `make_split` → `run_session` → "
-            "`confirm_holdout`. Notebooks `00`–`08` reproduce the EDA, the harness validation, the "
+            "`confirm_holdout`. Notebooks `00`-`08` reproduce the EDA, the harness validation, the "
             "disciplined search, and the 2k → 360K scale-up."
         )
-        st.caption("137 tests, ruff-clean, CI on every push — including a container build, so the deployed "
+        st.caption("137 tests, ruff-clean, CI on every push. Including a container build, so the deployed "
                    "image cannot drift from the tested code.")
 
 with stack:

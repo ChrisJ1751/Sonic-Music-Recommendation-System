@@ -1,6 +1,6 @@
-"""content.py — content-based artist similarity from social tags (TF-IDF).
+"""content.py, content-based artist similarity from social tags (TF-IDF).
 
-The collaborative model is blind to artists with almost no co-listening — and
+The collaborative model is blind to artists with almost no co-listening, and
 ~61% of artists have a single listener (notebook 00). Content-based similarity
 sidesteps that: it represents each artist by the *tags* users applied to it
 (`user_taggedartists.dat`), TF-IDF weighted, and finds neighbours by cosine. It

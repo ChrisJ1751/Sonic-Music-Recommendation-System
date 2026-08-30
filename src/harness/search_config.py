@@ -1,4 +1,4 @@
-"""search_config.py — THE AGENT-EDITABLE FILE (one of three).
+"""search_config.py, THE AGENT-EDITABLE FILE (one of three).
 
 This is the ONLY file the search loop is permitted to modify. It carries ALS
 hyperparameters and nothing else: no data loading, no metric definitions, no
@@ -7,7 +7,7 @@ touched.
 
 Contract (enforced by `run_search.py`):
   - Every value must stay inside the documented bound below. The runner
-    validates and refuses to run an out-of-bounds config — that keeps the
+    validates and refuses to run an out-of-bounds config, that keeps the
     search honest and the log comparable.
   - One CONFIG dict per attempt. `program.md` says what to try and in what
     order; this file holds the *current* attempt's values.
@@ -43,7 +43,7 @@ CONFIG = {
 
 # --- allowed ranges (the runner validates CONFIG against these) --------------
 # Edit CONFIG within these bounds. To change a BOUND is a protocol change, not a
-# tuning move — that requires a decisions.md entry, not just an edit here.
+# tuning move, that requires a decisions.md entry, not just an edit here.
 BOUNDS = {
     "factors": (16, 256),           # int
     "regularization": (1e-4, 1.0),  # float, log-scale in practice

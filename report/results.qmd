@@ -4,7 +4,7 @@ subtitle: "The leaderboard, the significance test, and calibration against SOTA.
 ---
 
 ::: {.lead}
-On the real 360K data, the linear **EASE** autoencoder wins the model comparison — significantly — and
+On the real 360K data, the linear **EASE** autoencoder wins the model comparison, significantly. And
 its honest full-ranking numbers sit in the published state-of-the-art band. It is the served model.
 :::
 
@@ -29,9 +29,9 @@ Paired, user-level bootstraps (5,000 resamples) on per-user NDCG\@10 confirm eve
 noise:
 
 ::: {.callout-note appearance="simple"}
-- **EASE − ALS = +0.036**, 95% CI [0.034, 0.037], **p < 0.001**.
-- **EASE − Mult-VAE = +0.026**, 95% CI [0.025, 0.027], **p < 0.001** — EASE beats the deep model too.
-- **Mult-VAE − ALS = +0.010**, 95% CI [0.008, 0.011], **p < 0.001** — the properly-trained deep model
+- **EASE − ALS = +0.036**: 95% CI [0.034, 0.037], **p < 0.001**.
+- **EASE − Mult-VAE = +0.026**: 95% CI [0.025, 0.027], **p < 0.001**. EASE beats the deep model too.
+- **Mult-VAE − ALS = +0.010**: 95% CI [0.008, 0.011], **p < 0.001**. The properly-trained deep model
   *does* overtake tuned ALS on real data (see [the pivot](pivot.qmd)).
 :::
 
@@ -48,13 +48,13 @@ the numbers rise into the band published for the comparable **Million Song Datas
 | \@100 | 0.361 | 0.531 |
 
 Published SOTA references on MSD: EASE **NDCG\@100 ≈ 0.39**, **Recall\@50 ≈ 0.43**, **Recall\@20 ≈ 0.33**.
-The dotted lines below mark each SOTA value **at the cutoff where it is actually published** — so we
+The dotted lines below mark each SOTA value **at the cutoff where it is actually published**, so we
 compare like-for-like, not a \@10 point against a \@100 line. Our curve reaches SOTA where SOTA is
 reported: the "0.22\@10" that looks low is simply the tightest-cutoff view of a strong ranker.
 
 ![Our EASE across cutoffs; dotted lines are published SOTA at their reported cutoff.](figures/cutoff_calibration.png){#fig-cutoff width=90%}
 
-## Beyond accuracy — and the accuracy-vs-coverage frontier
+## Beyond accuracy, and the accuracy-vs-coverage frontier
 
 Accuracy is not the whole story: a model that only ever recommends the ten most popular artists can
 score respectably while being useless for discovery. So we also measure **coverage** (how much of the
@@ -72,19 +72,19 @@ held-out set at k = 10:
 ![Accuracy vs coverage on 360K: EASE ranks best; the deep Mult-VAE reaches nearly twice the catalogue, but at lower top-10 accuracy.](figures/accuracy_vs_coverage.png){#fig-frontier width=90%}
 
 This is the **accuracy-vs-discovery frontier**, and it settles a tempting intuition: more coverage does
-*not* buy more accuracy. The deep **Mult-VAE covers 81% of the catalogue to EASE's 42%** — nearly double,
-and it surfaces rarer artists — yet its NDCG\@10 is *lower* (0.194 vs 0.219). Pushing recommendations out
+*not* buy more accuracy. The deep **Mult-VAE covers 81% of the catalogue to EASE's 42%**, nearly double,
+and it surfaces rarer artists, yet its NDCG\@10 is *lower* (0.194 vs 0.219). Pushing recommendations out
 into the long tail trades top-10 precision for reach; it is a product choice, not a free win. The API
 exposes a `diversity` parameter (MMR re-ranking) as the runtime lever on exactly this trade-off, rather
 than hard-coding a single point on the frontier.
 
 ::: {.callout-note appearance="simple"}
 **A note on the coverage number.** Coverage grows with how many users you aggregate over, so it must be
-quoted against a fixed population — these figures are measured over the **entire** held-out set of
+quoted against a fixed population, these figures are measured over the **entire** held-out set of
 39,499 users, not a small sample.
 :::
 
 ## Robustness on the locked holdout
 
 Re-reading the sealed holdout **once**, trained on the full pool, the served configuration generalises
-with no sign of overfitting — the search-visible numbers held up on data no decision ever touched.
+with no sign of overfitting, the search-visible numbers held up on data no decision ever touched.

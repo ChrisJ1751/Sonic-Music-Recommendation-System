@@ -1,8 +1,8 @@
 """FastAPI service for the artist recommender (Last.fm-360K).
 
 On startup it loads the active dataset (data_config -> the 360K core), fits the
-served model — **EASE**, the linear item-item autoencoder that won the model
-comparison on this data — on ALL interactions (caching its weight matrix B to
+served model, **EASE**, the linear item-item autoencoder that won the model
+comparison on this data, on ALL interactions (caching its weight matrix B to
 disk), and also fits a small ALS model to supply item embeddings for the MMR
 diversity control. Recommendations come from EASE; "fans also like" from EASE's
 item-item weights; unknown users fall back to popularity.
@@ -73,7 +73,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Sonic — Last.fm Artist Recommender",
+    title="Sonic, Last.fm Artist Recommender",
     version="2.0.0",
     lifespan=lifespan,
     description=(
@@ -197,7 +197,7 @@ def _reco() -> serving.RecoState:
 
 _LANDING = """<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sonic API — Last.fm Recommender</title>
+<title>Sonic API, Last.fm Recommender</title>
 <style>
   body{margin:0;min-height:100vh;display:grid;place-items:center;
     background:radial-gradient(800px 400px at 70% -10%,rgba(139,92,246,.12),transparent 60%),#0c0d11;
@@ -211,10 +211,10 @@ _LANDING = """<!doctype html><html lang="en"><head><meta charset="utf-8">
   a.ghost{background:transparent;color:#eef1f6;border:1px solid #272d3a}
   code{background:#0c0d11;border:1px solid #272d3a;border-radius:6px;padding:2px 6px;font-size:12px}
 </style></head><body><div class="card">
-  <h1>Sonic — recommender API</h1>
+  <h1>Sonic, recommender API</h1>
   <p>This is the <b>FastAPI serving layer</b> for the Last.fm-360K artist
-  recommender (served model: <b>EASE</b>). The interactive demo — results,
-  charts, and the live recommender — lives in the <b>Streamlit app</b>.</p>
+  recommender (served model: <b>EASE</b>). The interactive demo, results,
+  charts, and the live recommender, lives in the <b>Streamlit app</b>.</p>
   <p><a href="__APP_URL__">Open the app</a>
      <a class="ghost" href="/docs">API explorer (/docs)</a>
      <a class="ghost" href="/about">Results (/about)</a></p>
@@ -296,7 +296,7 @@ def recommendations(
 
 @app.get("/similar-artists/{artist_id}", response_model=SimilarArtistsResponse)
 def similar_artists(artist_id: int, k: int = Query(10, ge=1, le=100)) -> SimilarArtistsResponse:
-    """'Fans also like' — nearest artists in EASE's learned item-item weights."""
+    """'Fans also like', nearest artists in EASE's learned item-item weights."""
     out = serving.similar_artists(_reco(), artist_id, k)
     if out is None:
         raise HTTPException(status_code=404, detail=f"Unknown artist_id {artist_id}.")

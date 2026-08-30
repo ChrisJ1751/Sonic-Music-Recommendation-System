@@ -194,13 +194,13 @@ def test_text_tokens_meet_wcag_aa(token):
 @pytest.mark.parametrize("token", ["GREEN", "PURPLE", "BLUE", "AMBER", "FAINT"])
 def test_graphic_tokens_meet_wcag_non_text_contrast(token):
     """These colour bars, markers and lines that carry meaning. FAINT was
-    #3a4150 at 1.90:1 — the non-served models' bars were nearly invisible."""
+    #3a4150 at 1.90:1, the non-served models' bars were nearly invisible."""
     ratio = _contrast(getattr(_shared, token))
     assert ratio >= 3.0, f"{token} is {ratio:.2f}:1; meaningful non-text graphics need 3:1"
 
 
 def test_muted_is_not_used_for_text_in_the_app():
-    """MUTED is 4.23:1 — below the 4.5:1 text bar. It is fine for a reference
+    """MUTED is 4.23:1, below the 4.5:1 text bar. It is fine for a reference
     line and was briefly used for a footer, which is the mistake this pins."""
     assert _contrast(_shared.MUTED) < 4.5, "MUTED now passes AA; promote it and delete this guard"
     offenders = []

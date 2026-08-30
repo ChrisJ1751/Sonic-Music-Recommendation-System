@@ -1,7 +1,7 @@
 name: Deploy report to GitHub Pages
 
 # Builds the static Quarto report and publishes report/_site to GitHub Pages.
-# The report uses `execute: enabled: false`, so the runner only needs Quarto —
+# The report uses `execute: enabled: false`, so the runner only needs Quarto,
 # no Python, no data, no model. Fast and deterministic.
 
 on:

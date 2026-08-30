@@ -1,4 +1,4 @@
-# Data — raw + bulky artifacts are NOT committed (raw is re-downloadable).
+# Data, raw + bulky artifacts are NOT committed (raw is re-downloadable).
 # But we DO commit the small processed 360K matrix (~7.5 MB) so the hosted app
 # can run without the 2.1 GB raw dump or the 514 MiB EASE cache.
 #
@@ -35,16 +35,16 @@ env/
 # Notebooks
 .ipynb_checkpoints/
 
-# Outputs — keep the dirs, ignore bulky artifacts
+# Outputs, keep the dirs, ignore bulky artifacts
 outputs/figures/*
 outputs/experiments/*
 outputs/logs/
 outputs/runs/
 !outputs/**/.gitkeep
-# The search history is a portfolio artifact — keep it tracked.
+# The search history is a portfolio artifact, keep it tracked.
 !outputs/experiments/log.jsonl
 
-# Quarto report — keep the source (.qmd/.scss/figures), ignore the render + cache
+# Quarto report, keep the source (.qmd/.scss/figures), ignore the render + cache
 report/_site/
 report/.quarto/
 

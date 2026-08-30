@@ -1,4 +1,4 @@
-"""Models & results — leaderboard, significance, calibration against SOTA, live
+"""Models & results, leaderboard, significance, calibration against SOTA, live
 beyond-accuracy metrics, and the deep-vs-simple story behind the pivot.
 
 Laid out as a dashboard: numbers and charts lead, the longer arguments sit in
@@ -24,12 +24,12 @@ from _shared import (
 
 about = get_about()
 
-page_header("Models & results", "How the served model was chosen — measured honestly, on a frozen harness.")
+page_header("Models & results", "How the served model was chosen, measured honestly, on a frozen harness.")
 
 # ---- band: the reported numbers ---------------------------------------------
 kpi_row([(m["label"], f"{m['value']:.3f}", m["note"]) for m in about["headline"]])
 st.caption("Full-ranking, macro-averaged over scored users. Every contender ran through the same frozen "
-           "split and the same frozen metrics — EASE was chosen because it won, not by preference.")
+           "split and the same frozen metrics, EASE was chosen because it won, not by preference.")
 
 st.write("")
 
@@ -79,7 +79,7 @@ with cal:
         with st.expander("Why the @10 view is the least flattering slice"):
             st.markdown(
                 "NDCG@10 reads low only because every model ranks the **full catalogue** at a tight cutoff "
-                "— no sampled-negative shortcuts (Krichene & Rendle, KDD 2020), which inflate scores by "
+                ", no sampled-negative shortcuts (Krichene & Rendle, KDD 2020), which inflate scores by "
                 "ranking against a handful of random negatives instead of all 11,607 artists. Published "
                 "SOTA is usually reported at wider cutoffs; our curve meets it there."
             )
@@ -105,7 +105,7 @@ st.write("")
 front, note = st.columns([1.3, 1], gap="medium")
 
 with front:
-    with card("The accuracy–discovery frontier", "Reaching wider costs top-10 accuracy."):
+    with card("The accuracy-discovery frontier", "Reaching wider costs top-10 accuracy."):
         fig = go.Figure()
         for row in about["beyond_accuracy"]:
             colour = GREEN if row["served"] else (PURPLE if "VAE" in row["model"] else FAINT)
@@ -125,7 +125,7 @@ with note:
     with card("What that means"):
         st.info("EASE ranks best; Mult-VAE reaches ~2x the catalogue (0.81 vs 0.42) at lower NDCG@10.")
         st.caption("The **diversity** slider on the Recommendations page is the runtime lever on this same "
-                   "trade-off — MMR re-ranking, exposed by the API as its `diversity` parameter.")
+                   "trade-off, MMR re-ranking, exposed by the API as its `diversity` parameter.")
         st.page_link("views/recommendations.py", label="**Try the lever**", icon="🎧")
 
 st.write("")
@@ -136,7 +136,7 @@ with card("Why the served model is EASE, not deep learning"):
     p1, p2 = st.columns(2)
     for col, fname, cap in [
         (p1, "deep_vs_simple.png",
-         "Phase 1 (2k): a deep VAE and linear EASE vs tuned ALS — ALS holds on small data."),
+         "Phase 1 (2k): a deep VAE and linear EASE vs tuned ALS, ALS holds on small data."),
         (p2, "ranking_flip.png",
          "Capacity pays off on real data: on 360K both EASE and the deep VAE overtake ALS."),
     ]:

@@ -1,4 +1,4 @@
-# Deploying Sonic — permanent hosting
+# Deploying Sonic, permanent hosting
 
 Two always-on, free surfaces:
 
@@ -8,7 +8,7 @@ Two always-on, free surfaces:
 The repo is already prepared: `git` is initialised, the `.gitignore` commits only
 the ~7.5 MB processed matrix (not the 514 MB EASE cache or 2.1 GB raw), the app is
 `torch`-free, and cross-links are configurable. The Streamlit app refits EASE from
-the matrix at startup, so no large model blob is needed for *that* surface — see the
+the matrix at startup, so no large model blob is needed for *that* surface, see the
 RAM note below for why the containerised API does the opposite.
 
 ---
@@ -33,7 +33,7 @@ it on every push. Just enable Pages once:
 
 1. GitHub repo -> **Settings -> Pages -> Build and deployment -> Source: GitHub Actions**.
 2. Push (or re-run the workflow from the Actions tab). It builds `report/_site` with
-   Quarto — no Python or data needed (`execute: enabled: false`).
+   Quarto, no Python or data needed (`execute: enabled: false`).
 3. Your report is live at `https://<you>.github.io/sonic-music-recsys/`.
 
 ## 2. App -> Hugging Face Spaces
@@ -60,8 +60,8 @@ it on every push. Just enable Pages once:
    git push space main
    ```
 
-   The Space installs `requirements.txt` (Streamlit + the lean serving stack — no
-   torch) and boots. First load fits EASE (~1-2 min on the free CPU tier — see the
+   The Space installs `requirements.txt` (Streamlit + the lean serving stack, no
+   torch) and boots. First load fits EASE (~1-2 min on the free CPU tier, see the
    RAM note below); it's cached for later loads in the same process.
 4. **Link back to the report:** Space -> **Settings -> Variables** -> add
    `REPORT_URL = https://<you>.github.io/sonic-music-recsys/`. The app's Overview
@@ -78,20 +78,20 @@ git add report && git commit -m "Point report at the live app" && git push
 ```
 
 (The in-page links use the `app_url` Quarto variable in `report/_variables.yml`; the
-navbar "Live demo" button is in `report/_quarto.yml` — the one `sed` covers both.)
+navbar "Live demo" button is in `report/_quarto.yml`, the one `sed` covers both.)
 
 ---
 
 ## 4. API -> Fly.io (alternative, not the deployed path)
 
-> **Not the deployed target — see section 5.** Kept because `fly.toml` is a
+> **Not the deployed target, see section 5.** Kept because `fly.toml` is a
 > working, fully-configured deployment and the record of the memory sizing.
 > Fly requires a payment method: with `min_machines_running = 0` compute bills
 > per-second while awake and the 1 GB volume bills continuously. See
 > <https://fly.io/pricing>.
 
 The FastAPI service is containerised and deployed separately from the app. Unlike
-the Space, **it never refits EASE** — a refit needs ~2.5-3 GB and would OOM the
+the Space, **it never refits EASE**, a refit needs ~2.5-3 GB and would OOM the
 machine. It fetches the pre-fitted 514 MiB `ease_B.npy` at boot instead, so the
 image stays artifact-free (~500 MB) and the model can be revised without
 rebuilding the service.
@@ -106,12 +106,12 @@ hf auth login                  # needs a token with WRITE permission
 hf upload jone1751/sonic-ease-360k data/processed/lastfm360k/ease_B.npy ease_B.npy
 ```
 
-`hf upload` creates the repo if it does not exist, **public by default** — which
+`hf upload` creates the repo if it does not exist, **public by default**, which
 is required here, because the container fetches the artifact over plain HTTPS
 with no token. If you make it private the Fly boot will fail on a 401.
 
 (`hf` is the CLI in `huggingface_hub` >= 1.0; `huggingface-cli` still works but is
-deprecated. In PowerShell, keep each command on one line — `\` is not a line
+deprecated. In PowerShell, keep each command on one line, `\` is not a line
 continuation there.)
 
 The current artifact's identity, already recorded in `fly.toml`:
@@ -135,7 +135,7 @@ flyctl volumes create sonic_artifacts --size 1 --region lhr
 flyctl deploy
 ```
 
-`flyctl launch` will offer to overwrite `fly.toml` — decline; the committed one
+`flyctl launch` will offer to overwrite `fly.toml`, decline; the committed one
 carries the measured memory sizing and the artifact configuration.
 
 Then check it:
@@ -173,7 +173,7 @@ under a second, but that is a change to `src/serving.py` and was left out of sco
 
 ## 5. API -> Hugging Face Docker Space (DEPLOYED)
 
-**Live: <https://jone1751-sonic-api.hf.space>** — `/docs`, `/health`, `/about`.
+**Live: <https://jone1751-sonic-api.hf.space>**, `/docs`, `/health`, `/about`.
 
 > **Requires PRO.** Hugging Face restricts Gradio and Docker Spaces on the
 > `cpu-basic` tier to **PRO** subscribers (~$9/mo); only *Static* Spaces are free
@@ -181,7 +181,7 @@ under a second, but that is a change to `src/serving.py` and was left out of sco
 > **402 Payment Required** without it. The Streamlit Space in section 2 is
 > unaffected.
 
-cpu-basic is 2 vCPU / **16 GB RAM** — roomy for a service whose measured floor is
+cpu-basic is 2 vCPU / **16 GB RAM**, roomy for a service whose measured floor is
 688 MiB. The artifact already lives on HF Hub, so the boot fetch stays in-network.
 Chosen over Fly to consolidate the app, the model repo and the API on one
 platform, which is the surface a reviewer actually browses.
@@ -193,7 +193,7 @@ Fly's volume avoided that. Measured build + boot from a cold push: ~100 s.
 **Same image as Fly.** The Dockerfile bakes `EASE_B_URL` / `EASE_B_SHA256` /
 `EASE_B_BYTES` as defaults, so the Space needs **no** variables configured. It
 leaves `EASE_B_CACHE_DIR` unset, so the artifact downloads straight to the path
-`serving.py` reads — correct here, because the free tier has no persistent volume.
+`serving.py` reads, correct here, because the free tier has no persistent volume.
 
 ### 5.1 Why a separate branch
 
@@ -212,7 +212,7 @@ git push space-api hf-space-api:main
 ```
 
 The push carries the Git-LFS objects (the 7.7 MB processed core), which the
-Dockerfile needs — its LFS-pointer guard fails the build otherwise.
+Dockerfile needs, its LFS-pointer guard fails the build otherwise.
 
 Watch the build in the Space's **Logs** tab. First boot downloads the 514 MiB
 artifact; you should see `fetch_ease_b | verified` then `model loaded`.
@@ -226,7 +226,7 @@ curl -s "https://jone1751-sonic-api.hf.space/recommendations/17084?k=5"
 
 ### 5.4 Updating it later
 
-**Preferred — the GitHub Action.** Run the *Deploy API to Hugging Face Space*
+**Preferred, the GitHub Action.** Run the *Deploy API to Hugging Face Space*
 workflow (`.github/workflows/deploy-api.yml`, manual trigger). It checks out
 `main` with LFS, swaps `docker/hf-space-README.md` into `README.md`, and
 force-pushes a snapshot to the Space. Needs an `HF_TOKEN` repository secret with
@@ -244,24 +244,39 @@ git push space-api hf-space-api:main
 
 ### 5.5 Updating the Streamlit app
 
-Same repo, different Space, and no README swap needed (the project `README.md`
-already carries the Streamlit header):
+> **`git push space main` no longer works on its own.** The repository README no
+> longer carries Space front matter, because it rendered as a stray config table
+> at the top of the GitHub page. Each Space now takes its own README from
+> `docker/`, swapped in at deploy time.
+
+**Preferred:** run the *Deploy to Hugging Face Space* workflow with
+`target: app`. It swaps `docker/hf-space-app-README.md` into `README.md` and
+force-pushes a snapshot. `target: api` does the same with
+`docker/hf-space-README.md`. Needs an `HF_TOKEN` secret with write scope.
+
+**Manual fallback:**
 
 ```bash
-git push space main
+git checkout -B space-snapshot main
+cp docker/hf-space-app-README.md README.md
+git commit -am "Deploy snapshot"
+git push --force space space-snapshot:main
+git checkout main
 ```
+
+Use `docker/hf-space-README.md` and push to `space-api` for the API Space.
 
 ### 5.6 Tradeoffs vs Fly
 
 | | HF Docker Space | Fly.io |
 |---|---|---|
-| Cost | PRO subscription (~$9/mo) — **deployed here** | Card required (~$2/mo at this config) |
+| Cost | PRO subscription (~$9/mo), **deployed here** | Card required (~$2/mo at this config) |
 | RAM | 16 GB (not configurable) | Pinned in `fly.toml` (2 GB) |
-| Artifact caching | None — re-downloads on cold start | Persistent volume |
+| Artifact caching | None, re-downloads on cold start | Persistent volume |
 | Sleep | After ~48 h idle | Scale-to-zero per request |
 
 The honest summary: HF is roomy but you cannot demonstrate right-sizing, because
-you are simply given 16 GB — and it now costs more than Fly. The memory analysis
+you are simply given 16 GB, and it now costs more than Fly. The memory analysis
 in `decisions.md` and `fly.toml` is what makes the sizing defensible, not the
 platform. Fly is the deployed target.
 
@@ -278,9 +293,9 @@ or a breaking URL change, and none blocks the current deployment.
 | **No metrics endpoint** | Structured logs give per-request latency and status, which covers debugging. There is no scrape target for p95/alerting. | `prometheus-client` and a `/metrics` route. |
 | **No lockfile** | Manifests are floor-only (`>=`) with no pins, so builds are not byte-reproducible. Dependabot now surfaces upstream releases as reviewable PRs, which is the mitigation, not the fix. | `uv lock` / `pip-compile` and a second manifest to keep in sync. |
 | **No API versioning** | Paths are unversioned (`/recommendations/...`). The report, the Streamlit app and the landing page all link to them, so adding `/v1` breaks live links today for a compatibility problem that does not exist yet. | A prefix plus redirects, and updating every link. |
-| **Two divergent manifests** | `requirements.txt` (what the Spaces install) and `pyproject.toml` core deps disagree: `matplotlib`/`seaborn` are core deps but unused at runtime (~80 MB of image); `streamlit`/`plotly` are in an extra but are the deployed surface. | Moving plotting deps to an extra — a manifest change with a blast radius across both Spaces and CI. |
+| **Two divergent manifests** | `requirements.txt` (what the Spaces install) and `pyproject.toml` core deps disagree: `matplotlib`/`seaborn` are core deps but unused at runtime (~80 MB of image); `streamlit`/`plotly` are in an extra but are the deployed surface. | Moving plotting deps to an extra, a manifest change with a blast radius across both Spaces and CI. |
 | **ALS retrains every boot** | 5.06 s of the 5.5 s `load_state()`, purely to obtain item embeddings for the MMR diversity control. Caching `item_factors` (2.8 MiB) would nearly eliminate startup. | A change to `src/serving.py`, which is out of scope by owner constraint. |
-| **`eval_core` double-counts duplicates** | `recall_at_k` returns 2.0 on `[0, 0]` with `relevant={0}`. Unreachable — every producer emits distinct indices via argpartition — and pinned by a characterisation test. | Editing the frozen harness, which is a deliberate integrity boundary. |
+| **`eval_core` double-counts duplicates** | `recall_at_k` returns 2.0 on `[0, 0]` with `relevant={0}`. Unreachable, every producer emits distinct indices via argpartition, and pinned by a characterisation test. | Editing the frozen harness, which is a deliberate integrity boundary. |
 
 ---
 
@@ -291,15 +306,15 @@ or a breaking URL change, and none blocks the current deployment.
   **688 MiB RSS**. *Fitting* it is the expensive part: ~1.04e12 FLOPs for the
   inverse, i.e. **~85-100 s and ~2.5-3 GB peak** at 10-12 GFLOP/s with BLAS pinned
   to one thread. HF's 16 GB free tier absorbs that; **Streamlit Community Cloud's
-  ~1 GB tier will OOM**. The containerised API never refits — it fetches the
+  ~1 GB tier will OOM**. The containerised API never refits, it fetches the
   pre-fitted artifact (section 4).
 - **Data:** only `data/processed/lastfm360k/{matrix.npz,item_ids,user_ids}` are
   committed. To rebuild them from scratch you need the raw dump (`python -m
   src.data_360k`), which is gitignored and not required for hosting.
 - **Cold start:** the Space sleeps when idle (free tier) and must wake *and refit*
-  EASE, which is ~1-2 min on the free CPU tier — not the ~30 s previously claimed
+  EASE, which is ~1-2 min on the free CPU tier, not the ~30 s previously claimed
   here. The Fly API (section 4) ships the pre-fitted matrix instead and cold-starts
   in ~10 s. Mention this if you embed the demo anywhere.
-- **API:** now deployed on Fly.io — see section 4. (This supersedes the previous
+- **API:** now deployed on Fly.io, see section 4. (This supersedes the previous
   note that the API was "redundant with the app ... left un-deployed by default";
   see decisions.md 2026-08-28.)

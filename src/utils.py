@@ -3,7 +3,7 @@ Shared utilities for the music recommender.
 
 Kept deliberately minimal. Add functions here only when they are used in more
 than one notebook or script. Premature abstraction is the enemy of a young
-project — start with notebook-local code and promote to src/ once the shape is
+project, start with notebook-local code and promote to src/ once the shape is
 clear.
 
 The point of the path constants below: anchor everything to PROJECT_ROOT so code
@@ -23,7 +23,7 @@ from pathlib import Path
 import yaml
 
 # -------------------------------------------------------------------------
-# Project paths — single source of truth
+# Project paths, single source of truth
 # -------------------------------------------------------------------------
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -42,7 +42,7 @@ FIGURES_DIR = OUTPUTS_DIR / "figures"
 EXPERIMENTS_DIR = OUTPUTS_DIR / "experiments"
 
 # Search-visible split artifacts (written by make_split, read by the loop). These
-# are NOT secret. The LOCKED holdout path is deliberately NOT here — it lives only
+# are NOT secret. The LOCKED holdout path is deliberately NOT here, it lives only
 # in src/harness/make_split.py so loop code has no symbol that could load it.
 HARNESS_DIR = PROCESSED_DIR / "harness"
 TRAIN_PATH = HARNESS_DIR / "train.npz"
@@ -83,7 +83,7 @@ def file_sha256(path: str | Path, chunk_size: int = 1 << 20) -> str:
 
 
 # -------------------------------------------------------------------------
-# Run directory — timestamped output folder per execution
+# Run directory, timestamped output folder per execution
 # -------------------------------------------------------------------------
 
 def make_run_dir(label: str | None = None) -> Path:

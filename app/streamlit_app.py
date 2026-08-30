@@ -1,4 +1,4 @@
-"""Sonic — a music recommender for a Spotify DS portfolio.
+"""Sonic, a music recommender built on Last.fm listening data.
 
 Entry point: defines the sidebar navigation. Page content lives in views/, and
 all model logic is in src/serving.py (shared with the FastAPI service). Run with:
@@ -20,7 +20,7 @@ os.environ.setdefault("OMP_NUM_THREADS", "1")
 
 import streamlit as st  # noqa: E402
 
-st.set_page_config(page_title="Sonic — Music Recommender", layout="wide")
+st.set_page_config(page_title="Sonic, Music Recommender", layout="wide")
 
 nav = st.navigation({
     "The project": [

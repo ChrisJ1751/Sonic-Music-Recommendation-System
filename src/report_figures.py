@@ -4,7 +4,7 @@
   at the cutoffs where they are actually published (so @10 is not compared to a
   @100 line). Numbers: our EASE from notebook 08; SOTA = EASE on the Million Song
   Dataset (Steck, WWW 2019: Recall@20 .333, Recall@50 .428, NDCG@100 .389).
-- ranking_flip: the 2k -> 360K NDCG@10 slope per model — the pivot in one chart.
+- ranking_flip: the 2k -> 360K NDCG@10 slope per model, the pivot in one chart.
 - beyond_accuracy_360k: EASE vs a popularity baseline on coverage and novelty,
   measured live on 1,500 users (seed 0).
 
@@ -43,8 +43,8 @@ def cutoff_calibration() -> None:
             ("Recall", 20, 0.333, viz.PURPLE)]
 
     fig, ax = plt.subplots(figsize=(9, 5))
-    ax.plot(ks, ndcg, "o-", color=viz.GREEN, lw=2.5, ms=8, label="our EASE — NDCG@k")
-    ax.plot(ks, recall, "s-", color=viz.PURPLE, lw=2.5, ms=8, label="our EASE — Recall@k")
+    ax.plot(ks, ndcg, "o-", color=viz.GREEN, lw=2.5, ms=8, label="our EASE. NDCG@k")
+    ax.plot(ks, recall, "s-", color=viz.PURPLE, lw=2.5, ms=8, label="our EASE. Recall@k")
 
     for metric, k, y, color in sota:
         ax.axhline(y, ls=(0, (2, 3)), color=color, lw=1.6, alpha=0.7)
@@ -105,7 +105,7 @@ def accuracy_vs_coverage() -> None:
         ax.annotate(name, (cov, ndcg), color=color, fontsize=10.5, fontweight="bold",
                     xytext=(9, 7), textcoords="offset points")
     ax.set(title="Accuracy vs coverage on 360K: EASE ranks best, the deep model reaches widest",
-           xlabel="catalog coverage — fraction of the 11,607 artists ever recommended",
+           xlabel="catalog coverage, fraction of the 11,607 artists ever recommended",
            ylabel="NDCG@10", xlim=(-0.03, 0.92), ylim=(0.02, 0.245))
     ax.grid(alpha=0.3)
     fig.tight_layout()

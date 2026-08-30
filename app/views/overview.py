@@ -1,4 +1,4 @@
-"""Overview — the dashboard landing.
+"""Overview, the dashboard landing.
 
 At-a-glance state of the project: how good the model is, what it beat, and where
 to go next. The *narrative* lives in the Quarto report; this app is the
@@ -27,7 +27,7 @@ page_header("Sonic", "Music recommendations from listening patterns · Last.fm-3
 
 # ---- band 1: how good is it -------------------------------------------------
 kpi_row([(m["label"], f"{m['value']:.3f}", m["note"]) for m in about["headline"]])
-st.caption(f"Full-catalogue ranking over all {d['n_items']:,} artists — no sampled-negative shortcuts. "
+st.caption(f"Full-catalogue ranking over all {d['n_items']:,} artists, no sampled-negative shortcuts. "
            "Every model ranked the same frozen split.")
 
 # Dataset shape as one compact line rather than a second tile band. Tiles stack
@@ -58,7 +58,7 @@ with left:
         st.success(about["significance"])
 
 with right:
-    with card("Served model — EASE", about["model"]["long"]):
+    with card("Served model, EASE", about["model"]["long"]):
         st.caption(about["model"]["kind"])
         # Inline code rather than st.code(): a code block scrolls horizontally in
         # a narrow card and the formula reads as truncated. Inline wraps.
@@ -83,10 +83,10 @@ for col, (target, icon, label, blurb) in zip(st.columns(4), routes, strict=True)
         st.caption(blurb)
 
 # ---- the narrative, deliberately below the fold and collapsed ---------------
-with st.expander("About this project — the one-paragraph version"):
+with st.expander("About this project, the one-paragraph version"):
     st.markdown(
         "A collaborative-filtering music recommender, built and evaluated the way a research team would "
-        "ship one — **frozen metrics, a leakage-safe holdout, strong baselines, and significance tests**. "
+        "ship one, **frozen metrics, a leakage-safe holdout, strong baselines, and significance tests**. "
         "The served model is **EASE**, a linear item-item autoencoder that beat tuned ALS *and* a deep "
         "Mult-VAE on real, uncapped listening data.\n\n"
         "The deliverable is not *“I trained EASE.”* It is *“I built an evaluation process trustworthy "
@@ -97,7 +97,7 @@ with st.expander("About this project — the one-paragraph version"):
 st.caption(
     f"📄 [Read the written report]({REPORT_URL}) · "
     f"⚙️ [API explorer]({API_URL}/docs) · "
-    f"[`/health`]({API_URL}/health) — the same recommendations over HTTP, from a containerised service."
+    f"[`/health`]({API_URL}/health), the same recommendations over HTTP, from a containerised service."
 )
 # Was a hand-styled div in MUTED, which is 4.23:1 against the background and so
 # fails WCAG AA for text. st.caption inherits the theme's body colour (17:1) and

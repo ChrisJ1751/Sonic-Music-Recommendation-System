@@ -132,7 +132,7 @@ def user_profile(state: RecoState, user_id: int, k: int = 12) -> dict:
 
 
 def similar_artists(state: RecoState, artist_id: int, k: int = 10) -> dict | None:
-    """'Fans also like' — nearest artists in EASE's symmetrised item-item weights.
+    """'Fans also like', nearest artists in EASE's symmetrised item-item weights.
     Returns None if the artist_id is out of range."""
     if not (0 <= artist_id < state.n_artists):
         return None
@@ -209,7 +209,7 @@ def about_payload() -> dict:
             "ndcg": [0.219, 0.284, 0.339, 0.361],
             "recall": [0.194, 0.278, 0.423, 0.531],
             # Best published EASE on the Million Song Dataset (Steck 2019), at the
-            # cutoffs where each is reported — so we compare like-for-like, not a
+            # cutoffs where each is reported, so we compare like-for-like, not a
             # @10 point against a @100 line.
             "sota_points": [
                 {"metric": "ndcg", "k": 100, "value": 0.389},
@@ -225,7 +225,7 @@ def about_payload() -> dict:
              "body": "Per-user interaction split (train / search-test / locked holdout); "
                      "the holdout was read exactly once."},
             {"title": "Full-catalogue ranking",
-             "body": "Every model ranks all 11,607 artists — no sampled-negative "
+             "body": "Every model ranks all 11,607 artists, no sampled-negative "
                      "shortcuts (Krichene & Rendle, KDD 2020)."},
             {"title": "Paired significance tests",
              "body": "5,000-resample paired bootstrap on per-user NDCG, so every "
@@ -240,7 +240,7 @@ def about_payload() -> dict:
         "pivot": "Phase 1 on Last.fm-2k: low-capacity ALS won and the deep VAE lost. "
                  "Phase 2 on real, uncapped Last.fm-360K (1.68M interactions): capacity pays off. "
                  "The deep Mult-VAE climbs from last to overtake ALS, and EASE pulls ahead of everything "
-                 "to become the served model. Complexity earns its keep only once there is enough data — "
+                 "to become the served model. Complexity earns its keep only once there is enough data, "
                  "but the linear model still wins.",
         "stack": ["Python", "implicit / PyTorch", "scipy.sparse", "FastAPI", "Streamlit", "pytest"],
     }

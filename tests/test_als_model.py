@@ -2,7 +2,7 @@
 
 These check the confidence transform math and that the implicit wrapper fits and
 recommends sanely (shape, train-item filtering, determinism). They do not assert
-metric *values* on real data — that's the search's job, logged, not pinned.
+metric *values* on real data, that's the search's job, logged, not pinned.
 """
 import numpy as np
 import pytest

@@ -1,4 +1,4 @@
-"""rerank.py — Maximal Marginal Relevance (MMR) diversity re-ranking.
+"""rerank.py, Maximal Marginal Relevance (MMR) diversity re-ranking.
 
 Carbonell & Goldstein (SIGIR 1998). The model card and notebook 04 show the
 served model is strongly popularity-biased; MMR is the standard lever to trade a

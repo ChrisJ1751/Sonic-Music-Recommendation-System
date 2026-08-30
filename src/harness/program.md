@@ -5,20 +5,20 @@
 > search to do. The runner and the agent follow it; they do not invent moves it
 > doesn't sanction.
 >
-> Like the FPD harness — and unlike upstream autoresearch — this protocol
+> Like the FPD harness, and unlike upstream autoresearch, this protocol
 > **proposes and reports; it never auto-promotes.** A human reads the log and
 > decides.
 
-## Frozen — never edited by the loop
+## Frozen, never edited by the loop
 
 The loop imports these and must not modify them (doing so is an integrity bug,
 not a tuning choice):
 
-- `src/harness/eval_core.py` — the per-user split and the precision@k /
+- `src/harness/eval_core.py`, the per-user split and the precision@k /
   recall@k / NDCG@k definitions.
 - The **locked holdout** (`data/processed/harness/_LOCKED_holdout/`). The loop
   has no symbol that references it. It is never read during search.
-- `docs/specs/*` and `decisions.md` — human-owned.
+- `docs/specs/*` and `decisions.md`, human-owned.
 
 ## The editable surface
 
@@ -29,7 +29,7 @@ rejected by the runner.
 ## Primary metric
 
 **NDCG@10 on the per-user test holdout**, averaged over scored users. Report
-precision@10 and recall@10 alongside it every time — a move that lifts NDCG but
+precision@10 and recall@10 alongside it every time, a move that lifts NDCG but
 craters recall is not obviously a win.
 
 > Decide the `k` and the primary metric here and then keep them fixed for the
@@ -40,17 +40,17 @@ craters recall is not obviously a win.
 Pre-register the moves before looking at results. Suggested opening sequence
 (edit freely):
 
-1. **Baseline** — the shipped `CONFIG` (`factors=64, reg=0.01, iters=15,
+1. **Baseline**: the shipped `CONFIG` (`factors=64, reg=0.01, iters=15,
    alpha=40`). Establishes the number every later move is compared against.
-2. **`alpha` sweep** — {1, 15, 40, 80}. Confidence scaling is usually the
+2. **`alpha` sweep**: {1, 15, 40, 80}. Confidence scaling is usually the
    highest-leverage implicit-ALS knob; find its neighborhood first.
-3. **`factors` sweep** at the best alpha — {32, 64, 128}. Watch for the point
+3. **`factors` sweep** at the best alpha, {32, 64, 128}. Watch for the point
    where more capacity stops helping the holdout (overfitting the sparse tail).
-4. **`regularization`** at the best (alpha, factors) — {0.001, 0.01, 0.1}.
-5. **`iterations`** — confirm the chosen config has converged (e.g. 15 vs 30).
+4. **`regularization`** at the best (alpha, factors), {0.001, 0.01, 0.1}.
+5. **`iterations`**: confirm the chosen config has converged (e.g. 15 vs 30).
 
 Write each planned config down first, with a one-line reason. Adding configs
-*after* seeing results is p-hacking — if you must, log it as a new
+*after* seeing results is p-hacking, if you must, log it as a new
 pre-registration round and treat the extra comparisons honestly.
 
 > The concrete pre-registered set for the Milestone-4 session lives in
@@ -79,11 +79,11 @@ the metrics, a `config_hash`, and a timestamp.
 
 ## Stopping criteria
 
-- A fixed budget: stop after the pre-registered moves above (≈ 5–8 configs), or
+- A fixed budget: stop after the pre-registered moves above (≈ 5 to 8 configs), or
 - a wall-clock box, or
 - two consecutive moves that don't beat the incumbent.
 
-Then **stop and report.** Do not keep roaming the space — at this sparsity a
+Then **stop and report.** Do not keep roaming the space, at this sparsity a
 wide enough search will manufacture a lucky winner.
 
 ## Acceptance

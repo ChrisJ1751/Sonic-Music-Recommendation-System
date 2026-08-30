@@ -14,7 +14,7 @@ from src import serving
 
 state = get_state()
 
-page_header("Recommendations", "Pick a listener — see what they play, and what the model suggests next.")
+page_header("Recommendations", "Pick a listener, see what they play, and what the model suggests next.")
 
 
 @st.cache_data(show_spinner=False)
@@ -39,7 +39,7 @@ with st.container(border=True):
     for col, user in zip(picks, samples, strict=True):
         label = _clip(user["top_artist"], 18)
         if col.button(f"User {user['user_id']}\n{label}", width="stretch",
-                      help=f"{user['top_artist']} — their most-played artist"):
+                      help=f"{user['top_artist']}, their most-played artist"):
             st.session_state["uid"] = user["user_id"]
 
     c1, c2, c3 = st.columns([1, 1, 2])
@@ -67,7 +67,7 @@ if profile["in_dataset"]:
     s1.metric("Artists in history", f"{profile['n_artists']:,}", border=True)
     s2.metric("Total plays", f"{total_plays:,}", border=True)
     s3.metric("Top artist", _clip(top["name"], 22),
-              help=f"{top['name']} — {top['plays']:,} plays", border=True)
+              help=f"{top['name']}, {top['plays']:,} plays", border=True)
     s4.metric("Strategy", STRATEGY_LABEL[rec["strategy"]].split(" · ")[0],
               help=STRATEGY_LABEL[rec["strategy"]], border=True)
 
@@ -84,7 +84,7 @@ left, right = st.columns(2, gap="medium")
 with left:
     if not profile["in_dataset"]:
         with card("Listening profile"):
-            st.warning("That user id is not in the dataset — they get popularity-based cold-start "
+            st.warning("That user id is not in the dataset, they get popularity-based cold-start "
                        "recommendations, which is the documented fallback rather than an error.")
     else:
         with card("Listening profile",
@@ -119,5 +119,5 @@ with right:
             },
         )
 
-st.caption("Drag **Diversity** above 0 to watch the list trade a little relevance for more variety — the "
+st.caption("Drag **Diversity** above 0 to watch the list trade a little relevance for more variety, the "
            "same MMR lever the API exposes as its `diversity` parameter.")

@@ -1,4 +1,4 @@
-"""als_model.py — confidence-weighted implicit ALS (reusable).
+"""als_model.py, confidence-weighted implicit ALS (reusable).
 
 Thin, well-documented wrapper around `implicit.als.AlternatingLeastSquares` that
 encodes the project's modelling decisions in one place:

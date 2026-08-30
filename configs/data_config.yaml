@@ -1,4 +1,4 @@
-# Data Source Configuration — where the data lives and how to load it.
+# Data Source Configuration, where the data lives and how to load it.
 # Change the source files? Edit here. Change the SEARCH/modeling? Edit
 # src/harness/search_config.py instead.
 
@@ -8,7 +8,7 @@ data:
   # each user's top-50 artists (which depressed scores). See decisions.md.
   active_dataset: "lastfm360k"
 
-  source: "Last.fm — GroupLens HetRec 2011"
+  source: "Last.fm, GroupLens HetRec 2011"
   url: "https://grouplens.org/datasets/hetrec-2011/"
   download_url: "https://files.grouplens.org/datasets/hetrec2011/hetrec2011-lastfm-2k.zip"
 

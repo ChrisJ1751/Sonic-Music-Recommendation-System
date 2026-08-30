@@ -1,12 +1,12 @@
 # Decision Log
 
-Append-only. **Newest at top.** Never delete an entry — supersede it with a new
+Append-only. **Newest at top.** Never delete an entry, supersede it with a new
 one that cites the old. Dates are absolute.
 
 Template:
 
 ```
-## YYYY-MM-DD — <short title>
+## YYYY-MM-DD, <short title>
 **Decision:** ...
 **Why:** ...
 **Revisit when:** ... (optional)
@@ -15,22 +15,22 @@ Template:
 
 ---
 
-## 2026-08-29 — The app becomes a dashboard; the report gets a drift guard
+## 2026-08-29, The app becomes a dashboard; the report gets a drift guard
 **Decision:** Split the two reader-facing surfaces by job rather than letting
-them duplicate each other. The **Quarto report is the narrative** — read it
-through. The **Streamlit app is the product** — dense, at-a-glance, interactive.
+them duplicate each other. The **Quarto report is the narrative**, read it
+through. The **Streamlit app is the product**, dense, at-a-glance, interactive.
 The app previously did both badly: every page was heading → paragraph → chart →
 paragraph, retelling the report's story in a worse medium.
 
-**How:** two primitives in `app/_shared.py` — `card()` for bordered panels and
-`kpi_row()` for metric bands — so pages compose a grid instead of hand-rolling
+**How:** two primitives in `app/_shared.py`, `card()` for bordered panels and
+`kpi_row()` for metric bands, so pages compose a grid instead of hand-rolling
 containers. Overview is now a landing dashboard (KPI band, card grid, four route
 cards, the essay collapsed into an expander). Data / Results / Methodology keep
 every claim but lead with visuals and move long arguments into expanders.
 Recommendations and Artist radio put controls in one panel and results in cards,
 so moving a slider changes something visible without scrolling.
 
-**Report review — one real break, live:** `limitations.qmd` linked
+**Report review, one real break, live:** `limitations.qmd` linked
 `../docs/specs/model_card.md`. Only `report/_site` is published to Pages, so
 `docs/` is not there and **every reader got a 404**. A crawl of all 19 unique
 link targets across the 7 pages found that one and nothing else; all six
@@ -45,14 +45,14 @@ published site.
 
 **Accessibility, measured not assumed.** Every palette token was checked against
 the real background with the WCAG relative-luminance formula. `FAINT` was
-**1.90:1** — it colours the bars for every model that is not EASE, i.e. the
+**1.90:1**, it colours the bars for every model that is not EASE, i.e. the
 comparison the results page exists to make, and they were nearly invisible.
 `results.py` also drew chart *labels* in it, where the bar is 4.5:1 rather than
 3:1. Fixed, and the ratios are now computed in tests rather than trusted.
 
 **Docs that contradicted their own code.** `model_card.md` described the split as
 60/15/20 while citing `make_split.py`, which has said 10% holdout / 15% of the
-remainder since 2026-07-01. Those are not merely stale numbers — 60/15/20 is the
+remainder since 2026-07-01. Those are not merely stale numbers, 60/15/20 is the
 split this log records as having *starved training* (0.23 → 0.17 NDCG@10 on 2k).
 A reviewer would have been told the model used the configuration the project had
 already rejected. A test now derives the shares from the constants.
@@ -67,15 +67,15 @@ the model cannot load; the landing page's second KPI band was collapsed after
 testing at 375px, where eight stacked tiles pushed every chart below the fold.
 
 **Revisit when:** the app grows a page that is genuinely narrative rather than
-interactive — at which point it belongs in the report instead.
+interactive, at which point it belongs in the report instead.
 
-## 2026-08-29 — Streamlit app: production pass, and a deprecation time bomb
-**Decision:** Review the Streamlit app the way the API was reviewed — by running
-it and reading its logs, not just its source — and fix what that surfaced.
+## 2026-08-29, Streamlit app: production pass, and a deprecation time bomb
+**Decision:** Review the Streamlit app the way the API was reviewed, by running
+it and reading its logs, not just its source, and fix what that surfaced.
 
 **The one that mattered:** all 14 chart/table/button calls used
 `use_container_width`, which Streamlit deprecated with removal "after
-2025-12-31" — a date that has **already passed**. `requirements.txt` pins
+2025-12-31", a date that has **already passed**. `requirements.txt` pins
 `streamlit>=1.62.0` with no upper bound, so the release that finally removes it
 would have broken the live app with no code change on our side. Replaced with
 `width="stretch"` throughout, and a test now fails if it comes back. This is the
@@ -89,7 +89,7 @@ schedule.
   Pinned at the entry point, before any library import. The project claims
   determinism; this makes the claim true on the app surface too.
 - **A caption that lied.** "Their 50 most-played artists" sat above a table
-  showing `k` (12) rows — it printed the history length, not the row count.
+  showing `k` (12) rows, it printed the history length, not the row count.
 - **Quick-picks rescanned the full 39,499 x 11,607 matrix on every rerun**
   (~9 ms). Cached; the result is seeded and deterministic, so nothing changes
   but the cost.
@@ -98,13 +98,13 @@ schedule.
 `p.exists()`; the user-id input is bounded to `n_users - 1` so the cold-start
 path is unreachable from the UI; views never reach past `serving.py`. Several
 bugs hypothesised from reading the code turned out not to exist under real data
-— no duplicate artist names in the top-200 dropdown, no negative scores to break
-the progress bars — and were not "fixed".
+, no duplicate artist names in the top-200 dropdown, no negative scores to break
+the progress bars, and were not "fixed".
 
 **Verified by use, not inspection:** every page driven in a browser, server logs
 clean (18 warnings before, zero after), console free of app-originated errors.
 A residual Plotly `-Infinity` text-placement warning during container layout is
-a rendering artifact, not a data problem — `log10` never sees a zero (minimum
+a rendering artifact, not a data problem, `log10` never sees a zero (minimum
 listeners per artist is 9) and the charts render correctly.
 
 **Coverage:** `app/` had **zero** tests despite being the primary deployed
@@ -113,21 +113,21 @@ actually reached production (localhost defaults, the deprecated API, BLAS
 ordering). Each guard was mutation-checked against a synthetic bad source, so
 none of them is a test that cannot fail.
 
-## 2026-08-28 — Production-readiness pass on the serving layer
+## 2026-08-28, Production-readiness pass on the serving layer
 **Decision:** Before calling the API "shipped", fix the things that were wrong in
 a way only a live deployment exposes. Four real defects, all found by probing the
 running service rather than by reading it.
 
 **1. `/health` lied.** It returned `200 {"status": "ok"}` with `n_users: 0`
-while the model was still loading. Every orchestrator — Fly's check, a k8s
-readiness probe, a load balancer — would mark that instance healthy and route
+while the model was still loading. Every orchestrator, Fly's check, a k8s
+readiness probe, a load balancer, would mark that instance healthy and route
 traffic at something that could not serve a single recommendation. It now
 returns **503 `{"status": "loading"}` with `Retry-After: 10`** until the model is
 actually resident, and 200 only once it is. That is the difference between a
 liveness probe and a readiness probe, and only the latter is useful here.
 
 **2. Five endpoints returned 500 on a bare `KeyError`.** `_reco()` indexed
-`STATE["reco"]` directly, so an unready instance answered with a stack trace —
+`STATE["reco"]` directly, so an unready instance answered with a stack trace,
 which reads as a bug and gives a caller nothing to retry on. Now a clean **503
 with `Retry-After`**. `/about` and `/` deliberately still serve, since neither
 needs the matrix.
@@ -142,11 +142,11 @@ free string. A test asserts this so it cannot silently rot.
 `http://localhost:8080` and was never set on the Space, so *every visitor* got a
 localhost link for "open the report". The same bug existed on the API landing
 page (`APP_URL`). Both now default to the published URL and take an env override
-— production correct by construction, local dev the special case. The general
+, production correct by construction, local dev the special case. The general
 lesson: a localhost default is a loaded gun in anything that gets deployed.
 
 **Also:** permissive CORS (public, read-only, unauthenticated GET API, no
-credentials) so it is callable from a browser; `app/` added to the ruff run —
+credentials) so it is callable from a browser; `app/` added to the ruff run,
 it was the only unlinted package and is the primary deployed surface;
 Dependabot for pip / actions / docker, which is the mechanism that turns
 floor-only version pins into reviewable PRs instead of surprise breakage; and a
@@ -162,12 +162,12 @@ to a green test suite and a passing lint. They were only observable by running
 the thing and asking what happens when it is *not* healthy. That is the argument
 for the readiness tests now in `tests/test_api_contract.py`.
 
-## 2026-08-28 — Deploy the API to a Hugging Face Docker Space, not Fly
+## 2026-08-28, Deploy the API to a Hugging Face Docker Space, not Fly
 **Decision:** Host the containerised API as a **Hugging Face Docker Space**
 (`jone1751/sonic-api`, cpu-basic, PRO) rather than on Fly.io. Live at
 <https://jone1751-sonic-api.hf.space>.
 
-**Why:** consolidation, not economics — Fly is cheaper (~$2/mo vs a $9/mo PRO
+**Why:** consolidation, not economics, Fly is cheaper (~$2/mo vs a $9/mo PRO
 subscription). The Streamlit demo, the EASE artifact
 (`jone1751/sonic-ease-360k`) and now the API all sit under one Hugging Face
 account, which is the surface a reviewer actually browses, and PRO is already
@@ -177,7 +177,7 @@ between the two targets; only platform config differs.
 **What it costs, honestly:**
 - No memory pinning. cpu-basic hands you 16 GB whether or not you need 688 MiB,
   so the deployment itself cannot demonstrate right-sizing. The measurement is
-  the defensible artifact, not the platform — it lives in the 2026-08-28 entry
+  the defensible artifact, not the platform, it lives in the 2026-08-28 entry
   below and in `fly.toml`, which is kept as a working, fully-configured
   alternative deployment.
 - Ephemeral disk. Persistent storage on Spaces is a paid add-on, so a slept
@@ -194,7 +194,7 @@ fallback, MMR diversity, 404s and `X-Request-ID` round-tripping all check out.
 crash-looped with `ImportError: libgomp.so.1`. `implicit`'s compiled extension
 dlopens the OpenMP runtime at import; the manylinux wheel needs no compiler but
 does need `libgomp1`, which is absent from `python:3.12-slim`. Platform-
-independent — it would have failed identically on HF. CI's docker job now runs
+independent, it would have failed identically on HF. CI's docker job now runs
 `python -c "import api.main"` inside the image, which reproduces it exactly.
 
 **Revisit when:** Space cold starts become annoying (buy persistent storage, or
@@ -203,11 +203,11 @@ enforced rather than merely documented.
 
 **Supersedes:** the deployment-target half of the 2026-08-28 entry below
 ("Deploy the API to Fly.io; ship the EASE matrix, never refit it in the
-container"). Everything that entry says about the *artifact* — ship it, never
-refit it, verify size + SHA-256 at boot — stands unchanged and is what makes
+container"). Everything that entry says about the *artifact*, ship it, never
+refit it, verify size + SHA-256 at boot, stands unchanged and is what makes
 this deployment work.
 
-## 2026-08-28 — Deploy the API to Fly.io; ship the EASE matrix, never refit it in the container
+## 2026-08-28, Deploy the API to Fly.io; ship the EASE matrix, never refit it in the container
 **Decision:** Deploy the FastAPI service as a public, containerised surface on
 **Fly.io** (2 GB shared-cpu-1x, scale-to-zero, persistent volume), and treat the
 514 MiB EASE weight matrix as a **published artifact fetched at boot** rather than
@@ -217,7 +217,7 @@ fails the boot if verification fails. The image stays artifact-free.
 
 **Why:** Refitting EASE in-container is not viable. Inverting the 11,607 x 11,607
 Gram matrix is ~1.04e12 FLOPs; measured single-threaded throughput on this
-hardware is 10-12 GFLOP/s, so a refit is **~85-100 s and ~2.5-3 GB peak** — it
+hardware is 10-12 GFLOP/s, so a refit is **~85-100 s and ~2.5-3 GB peak**, it
 would OOM the machine it is supposed to boot. Shipping the artifact turns that
 into a one-off 514 MiB download. Loading it costs **0.11 s**.
 
@@ -243,13 +243,13 @@ network dependency at first boot, bounded by verification and retries.
 
 **Not done, deliberately:** `src/serving.py` is untouched. The artifact is placed
 at the path it already reads, by the container entrypoint. That leaves the ALS
-retrain (5.06 s, the dominant share of startup) in place — caching its
+retrain (5.06 s, the dominant share of startup) in place, caching its
 `item_factors` (2.8 MiB) would remove it, but that is a serving-code change and
 was ruled out of scope for this pass.
 
 **Revisit when:** the catalogue grows past ~20k items (B is O(n_items^2): 20k
 items would be a 1.6 GB matrix and the refit ~5x slower), or if the service needs
-more than one machine — at which point the per-machine 514 MiB resident copy, not
+more than one machine, at which point the per-machine 514 MiB resident copy, not
 CPU, is the scaling constraint.
 
 **Supersedes:** the 2026-06-30 kickoff entry's "Deliverable is a FastAPI JSON
@@ -258,35 +258,35 @@ report, per AGENTS.md, but never formally superseded here), and `DEPLOY.md`'s
 "API (optional) ... it's redundant with the app for a portfolio, so it's left
 un-deployed by default."
 
-## 2026-07-01 — Deep-learning capstone: keep EASE served, Mult-VAE is the discovery alternative
+## 2026-07-01, Deep-learning capstone: keep EASE served, Mult-VAE is the discovery alternative
 **Decision:** After promoting EASE, run one more experiment (`src/exp_deep_360k.py`)
-— a properly-trained deep **Mult-VAE** (600/200, 40 epochs) against the full zoo on
-the identical frozen 360K split — and **keep EASE as the served model**. Record the
+, a properly-trained deep **Mult-VAE** (600/200, 40 epochs) against the full zoo on
+the identical frozen 360K split, and **keep EASE as the served model**. Record the
 deep model as a legitimate *discovery-oriented* alternative, not the served choice.
 **Result (NDCG@10, full-ranking, all p<0.001):** EASE 0.219 > Mult-VAE 0.194 >
 ALS 0.184 > item-item BM25 0.110 > popularity 0.044. The Mult-VAE went from *last*
 on 2k to *2nd* on 360K (overtakes ALS), but still trails EASE by +0.026. Coverage:
-Mult-VAE 0.811 vs EASE 0.419 — ~2x reach at *lower* accuracy.
-**Why:** (1) Completes the pivot loop honestly — the deep model that lost on small
+Mult-VAE 0.811 vs EASE 0.419, ~2x reach at *lower* accuracy.
+**Why:** (1) Completes the pivot loop honestly, the deep model that lost on small
 data was re-tested on real data, and either outcome was informative. (2) Confirms
 the Dacrema/Rendle prior: a well-designed linear model beats a deep one on accuracy
 even at scale. (3) Settles the "more coverage → more accuracy?" question with data:
 coverage and accuracy rise together only up to EASE, then trade off (accuracy-vs-
 discovery frontier); coverage does not buy accuracy.
 **Corrections made:** two displayed numbers were stale/misleading and were fixed
-everywhere — item-item BM25 on 360K is **0.110** (not the 0.150 estimate), and
+everywhere, item-item BM25 on 360K is **0.110** (not the 0.150 estimate), and
 EASE catalog coverage is **0.419** measured over the full held-out set (the earlier
 "0.199" was a 1,500-user sampling artifact).
 **Revisit when:** trying EASE variants (EDLAE), RecVAE, tuned iALS (Rendle 2022),
-or hybrid content features — none expected to change the headline.
+or hybrid content features, none expected to change the headline.
 
-## 2026-07-01 — Pivot to Last.fm-360K, fix the split, promote EASE as served model
+## 2026-07-01, Pivot to Last.fm-360K, fix the split, promote EASE as served model
 **Decision:** Scale the project from Last.fm-2k (HetRec) to **Last.fm-360K**, fix a
 training-data-starvation bug in the split, and switch the served model from ALS
 to **EASE**.
 **Why (three linked findings):**
 1. **The 2k data was capping us.** Each 2k user is truncated to their top-50
-   artists — an artificial task, and only ~92k interactions. 360K has real,
+   artists, an artificial task, and only ~92k interactions. 360K has real,
    *uncapped* histories (17.6M interactions). We filter to a dense core (artists
    with >=100 listeners, a seeded 40k-user sample): **39,499 users x 11,607
    artists, 1.68M interactions** (`src/data_360k.py`, cached).
@@ -299,7 +299,7 @@ to **EASE**.
    "capacity pays off as data grows" story. EASE is now the served model.
 **On the "low NDCG" concern:** 0.219@10 is the harsh-cutoff view of a strong
 model under *honest full-ranking* evaluation. At the cutoffs the literature uses,
-our EASE scores **NDCG@100=0.361, Recall@50=0.423** — squarely in the published
+our EASE scores **NDCG@100=0.361, Recall@50=0.423**, squarely in the published
 SOTA band on the comparable Million Song Dataset (EASE ~0.39/0.43, Mult-VAE
 ~0.32/0.36). We report the full cutoff curve so @10 is never seen alone.
 **Project framing:** Phase 1 (2k) = methodology development (frozen harness,
@@ -308,42 +308,42 @@ disciplined ALS search, significance, cold-start; notebooks 00-07). Phase 2
 notebooks stand as the Phase-1 record.
 **Revisit when:** adding track-level (song) recommendations, the agreed next step.
 
-## 2026-06-30 — Notebook depth, significance testing, and an encoding-bug fix
+## 2026-06-30, Notebook depth, significance testing, and an encoding-bug fix
 **Decision:** Deepen the analytical notebooks and add statistical rigor.
 - **Significance testing**: `src/stats.py` (bootstrap CI + paired user-level
   bootstrap) + `eval_core.per_user_scores`. Result: ALS beats the strong
   item-item BM25 baseline by **+0.0274 NDCG@10, 95% CI [0.021, 0.034],
-  p < 0.001** — the test Dacrema et al. say is usually skipped. Notably, ALS
+  p < 0.001**, the test Dacrema et al. say is usually skipped. Notably, ALS
   wins for only 46% of users (loses for 30%), which argues for routing, not a
   blanket choice.
 - **Deeper notebooks**: 00 gains data-quality checks + a Lorenz curve / Gini
   (popularity Gini 0.73 by listeners) + the tag landscape; 01 gains a runnable
   demonstration that a user-level split makes CF blind (0/378 held-out users have
   history); 02 gains per-user NDCG distribution + a mainstreamness analysis
-  (mainstream-taste users served 3.1x better — an equity finding); 04 gains a 2D
+  (mainstream-taste users served 3.1x better, an equity finding); 04 gains a 2D
   PCA embedding coloured by genre (clusters by genre with no genre supervision);
   05 gains the significance tests.
 - **Bug fixed**: `load_artists` read artists.dat as latin-1, but the file is
-  UTF-8 — accented names were mojibake ("Björk" -> "BjÃ¶rk"). Switched to UTF-8;
+  UTF-8, accented names were mojibake ("Björk" -> "BjÃ¶rk"). Switched to UTF-8;
   added a regression test.
 **Why:** The notebooks were too thin to carry the portfolio, and a comparison
 without a significance test isn't credible by current standards. The encoding bug
 was a visible data-quality defect.
 
-## 2026-06-30 — Hardening pass: strong baselines, beyond-accuracy metrics, MMR, packaging
+## 2026-06-30, Hardening pass: strong baselines, beyond-accuracy metrics, MMR, packaging
 **Decision:** Extend the project to staff-level standards, grounded in recsys
 literature, without changing the chosen model.
 - **Benchmarked against strong baselines** (Ferrari Dacrema et al., RecSys 2019,
   "Are We Really Making Much Progress?"): popularity, item-item BM25, BPR, and the
   chosen ALS. On the frozen split: popularity 0.063, BPR 0.119, **item-item BM25
   0.144**, ALS 0.171 (NDCG@10). The honest benchmark is BM25, not popularity; ALS
-  wins but by a modest margin over a simple neighbourhood model — stated plainly.
+  wins but by a modest margin over a simple neighbourhood model, stated plainly.
   Code: `src/models.py`, `notebooks/05`.
 - **Beyond-accuracy metrics** (Kaminskas & Bridge 2017): added MRR@k, MAP@k to the
   frozen `eval_core`; coverage, novelty (self-information), Gini, intra-list
   diversity to `src/metrics.py`. The search log now records the full suite.
 - **MMR diversity re-ranking** (Carbonell & Goldstein 1998): `src/rerank.py`,
-  exposed as `diversity` on the API — the concrete lever for the
+  exposed as `diversity` on the API, the concrete lever for the
   accuracy-vs-discovery tradeoff the model card flags.
 - **Packaging/CI**: `pyproject.toml` (canonical deps + ruff + pytest config),
   ruff clean, GitHub Actions CI (ruff + pytest on 3.12), Dockerfile for the API.
@@ -354,7 +354,7 @@ engineering surface (lint/CI/Docker) is what separates a notebook from a
 shippable service.
 **Revisit when:** never relitigated; future model work re-runs the comparison.
 
-## 2026-06-30 — Milestone 4: chosen config + locked-holdout confirmation
+## 2026-06-30, Milestone 4: chosen config + locked-holdout confirmation
 **Decision:** Promote **factors=32, regularization=0.01, iterations=15, alpha=1.0**
 (log1p confidence) as the served config. Recorded in `search_config.CONFIG`
 (tag "chosen"); the API serves it.
@@ -365,7 +365,7 @@ by NDCG@10 on the search-visible test split. Findings:
   Extreme sparsity rewards small models.
 - **alpha=1 (the floor) is best**; NDCG falls monotonically as alpha rises.
 - regularization (0.001/0.01/0.1 at f128) and iterations (15 vs 30) make no
-  material difference — the model is converged and not regularization-limited.
+  material difference, the model is converged and not regularization-limited.
 **Why f32 over the nominal top f24:** f24 (0.1712+/-0.0031) and f32
 (0.1710+/-0.0006) are statistically tied (overlapping bands), but f32's seed band
 is ~5x tighter. Per program.md's acceptance rule (overlapping = no real
@@ -373,16 +373,16 @@ difference; prefer the stabler/simpler), f32 is the credible pick. All three
 beat popularity (0.063) by ~2.7x.
 **Holdout confirmation (one-time, `confirm_holdout.py`, read once):** trained on
 the full search pool (74,265 interactions), the chosen config scores
-**NDCG@10 = 0.2330 +/- 0.0006** on the locked holdout — higher than CV because of
+**NDCG@10 = 0.2330 +/- 0.0006** on the locked holdout, higher than CV because of
 the extra training data and more held-out items per user. It generalises with no
 sign of overfitting.
 **Known tradeoff:** the chosen config has low catalog coverage@10 (~0.04). Higher
-alpha/factors raise coverage (to ~0.11) at a real NDCG cost — a discovery-vs-
+alpha/factors raise coverage (to ~0.11) at a real NDCG cost, a discovery-vs-
 accuracy product call, flagged in the model card, not re-litigated here.
 **Revisit when:** a product goal weights catalog coverage/diversity, or a new
 data export changes the sparsity regime.
 
-## 2026-06-30 — Milestone 3: log-scale counts before confidence weighting
+## 2026-06-30, Milestone 3: log-scale counts before confidence weighting
 **Decision:** ALS confidence is `c = 1 + alpha * log(1 + count)` (log1p of the
 listen count), not `c = 1 + alpha * count`. Implemented in `als_model.to_confidence`
 (default `count_transform="log1p"`; `"linear"` kept for the ablation).
@@ -392,11 +392,11 @@ alpha rises. A pre-search ablation on the search-visible split (factors=64,
 reg=0.01, iters=15) showed, at NDCG@10: popularity 0.063; raw-count ALS peaks
 0.098 at alpha=1 and falls to 0.024 at alpha=100; **log1p ALS reaches 0.158 at
 alpha=1** and stays strong across alpha. Log-scaling is Hu et al.'s own variant
-for skewed counts — faithful, not a hack. Full ablation in notebooks/02.
+for skewed counts, faithful, not a hack. Full ablation in notebooks/02.
 **Revisit when:** never casually; switching the transform changes what `alpha`
 means and must supersede this entry.
 
-## 2026-06-30 — Milestone 2: split parameters and three-way partition
+## 2026-06-30, Milestone 2: split parameters and three-way partition
 **Decision:** `eval_core.py` is implemented and toy-validated (7 tests pass).
 The locked holdout is sealed via `make_split.py` as a **three-way per-user
 partition**, reusing the frozen split twice:
@@ -414,9 +414,9 @@ two cuts independent and reproducible.
 `HOLDOUT_SEED`, `SPLIT_SEED` requires superseding this entry and re-running
 `make_split` (it overwrites deterministically).
 
-## 2026-06-30 — Adopt FPD repo conventions: utils path-anchoring + make_split sole-owner
+## 2026-06-30, Adopt FPD repo conventions: utils path-anchoring + make_split sole-owner
 **Decision:** Add `src/utils.py` as the single source of truth for paths
-(`PROJECT_ROOT`-anchored), config loading, logging, and hashing — modeled on the
+(`PROJECT_ROOT`-anchored), config loading, logging, and hashing. Modeled on the
 FPD project's `src/utils.py`. All modules and notebooks resolve data through it;
 no relative-path or `os.chdir` hacks. The locked-holdout path is defined **only**
 in `src/harness/make_split.py` (the one-time human-run split), never in
@@ -428,19 +428,19 @@ make_split sole-ownership convention is the structural mechanism that enforces
 "the loop never reads the holdout" (it's not just a rule, there's no symbol to
 call). Matching these now keeps the two projects' discipline consistent.
 
-## 2026-06-30 — Implicit feedback framing; ranking metrics, not RMSE
+## 2026-06-30, Implicit feedback framing; ranking metrics, not RMSE
 **Decision:** Treat the Last.fm `weight` (per-user-artist listen count) as
 **implicit feedback**. Model with implicit ALS using confidence weighting
 `c = 1 + alpha * count`. Evaluate with **precision@k / recall@k / NDCG@k**, never
 RMSE/MAE on the raw counts.
-**Why:** There are no explicit ratings in this dataset — a play count is a signal
+**Why:** There are no explicit ratings in this dataset, a play count is a signal
 of *exposure/preference strength*, not a graded rating. Counts are also wildly
 heavy-tailed (a few mega-listened artists per user). RMSE on counts would chase
 magnitude, which is not the recommendation task. Ranking metrics measure what we
 actually serve: an ordered list of artists a user hasn't seen yet.
 **Revisit when:** never, for this dataset, unless an explicit-rating source is added.
 
-## 2026-06-30 — Evaluation split = per-user interaction holdout, not naive row split
+## 2026-06-30, Evaluation split = per-user interaction holdout, not naive row split
 **Decision:** The frozen split (in `src/harness/eval_core.py`) holds out a
 fraction of *each user's* interactions for test, keeping that same user's other
 interactions in train. It is NOT a random split of the interaction rows, and NOT
@@ -448,7 +448,7 @@ a split of users into train/test groups.
 **Why:** See `docs/specs/eval_design.md` for the full argument. In short: (a) a
 random row split can put a user's only-three artists partly in train and partly
 in test, but to recommend *for* a user at test time the model must have learned
-that user's vector from *train* interactions — a naive split leaks the test
+that user's vector from *train* interactions, a naive split leaks the test
 artists into the user factor and inflates scores; (b) splitting whole users into
 a test group makes ALS unable to score them at all (no learned user vector =
 cold start), which measures the cold-start fallback, not the CF model. Per-user
@@ -456,7 +456,7 @@ holdout is the standard, leakage-safe protocol for top-N recommendation.
 **Revisit when:** never (this is the frozen contract); changes require a new
 entry and re-validation of `eval_core`.
 
-## 2026-06-30 — Reuse FPD's three-file discipline; do NOT assume its stability layer
+## 2026-06-30, Reuse FPD's three-file discipline; do NOT assume its stability layer
 **Decision:** Adopt the autoresearch-style three-file architecture from the FPD
 project (frozen `eval_core.py` + agent-editable `search_config.py` + human
 `program.md`). Do **not** port FPD's stability-across-seeds/folds machinery
@@ -466,12 +466,12 @@ imbalanced* (194 positives). This dataset's challenge is **sparsity, not
 imbalance**. Copying the stability layer without that justification would be
 cargo-culting. The investigation is tracked in
 `docs/specs/sparsity_fragility_investigation.md`.
-**Revisit when:** the EDA (Milestone 1) is complete — decide then, from the
+**Revisit when:** the EDA (Milestone 1) is complete, decide then, from the
 per-user interaction distribution, whether a stability layer is warranted.
 
-## 2026-06-30 — Project kickoff, dataset, and structure
+## 2026-06-30, Project kickoff, dataset, and structure
 **Decision:** Use Last.fm HetRec 2011 (`user_artists.dat`). Adopt the repo
 structure documented in `README.md` (configs / data / docs / notebooks / src /
 api / tests / outputs). Deliverable is a FastAPI JSON endpoint; no frontend.
-**Why:** Music-domain dataset directly relevant to a Spotify application; the
+**Why:** Music-domain dataset directly relevant to a music-streaming application; the
 structure mirrors the proven FPD template so the discipline transfers.

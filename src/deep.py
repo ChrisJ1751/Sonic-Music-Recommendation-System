@@ -1,4 +1,4 @@
-"""deep.py — Mult-VAE (Liang et al., WWW 2018), the standard deep recommender for
+"""deep.py, Mult-VAE (Liang et al., WWW 2018), the standard deep recommender for
 implicit feedback, run through this project's frozen evaluation harness.
 
 The point is an honest, apples-to-apples deep-learning comparison: same per-user
@@ -6,7 +6,7 @@ split, same metrics as ALS / EASE / BM25. Torch is imported lazily and only used
 here, so the rest of the project stays torch-free.
 
 Architecture: a denoising variational autoencoder over each user's bag-of-items
-vector — encoder MLP -> latent (mu, logvar) -> decoder MLP -> multinomial logits
+vector, encoder MLP -> latent (mu, logvar) -> decoder MLP -> multinomial logits
 over all items. Trained with the multinomial log-likelihood + KL, with KL
 annealed. Recommendations = decoder logits with the user's train items masked.
 """

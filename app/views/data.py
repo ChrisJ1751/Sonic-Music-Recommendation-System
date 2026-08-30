@@ -1,4 +1,4 @@
-"""The data — live EDA over the served Last.fm-360K matrix, plus the 2k contrast
+"""The data, live EDA over the served Last.fm-360K matrix, plus the 2k contrast
 that motivated the pivot.
 
 Every chart here is computed from the matrix the model is actually serving, so
@@ -24,17 +24,17 @@ from _shared import (
 
 d = data_stats()
 
-page_header("The data", "Last.fm-360K — real, uncapped listening histories. Everything here is computed live.")
+page_header("The data", "Last.fm-360K, real, uncapped listening histories. Everything here is computed live.")
 
 # ---- band: shape of the matrix ----------------------------------------------
 kpi_row([
     ("Users", f"{d['n_users']:,}", "Listeners in the dense 360K core."),
     ("Artists", f"{d['n_items']:,}", "The full catalogue every model ranks."),
-    ("Interactions", f"{d['nnz']:,}", "User–artist pairs with at least one play."),
+    ("Interactions", f"{d['nnz']:,}", "User-artist pairs with at least one play."),
     ("Density", f"{d['density'] * 100:.2f}%", "Fraction of the user×artist matrix that is non-zero."),
 ])
 st.caption(
-    f"Median **{d['median_history']} artists** per user ({d['mean_history']:.0f} on average) — real histories, "
+    f"Median **{d['median_history']} artists** per user ({d['mean_history']:.0f} on average), real histories, "
     f"not the 50-artist cap of the small 2k set. **{(1 - d['density']) * 100:.1f}% sparse**, the normal regime "
     "for collaborative filtering."
 )
@@ -95,7 +95,7 @@ with meaning:
             st.markdown(
                 "Play counts are **heavy-tailed** across six orders of magnitude, which is why the model "
                 "uses implicit *confidence* weighting on log-scaled counts rather than treating a count as "
-                "a rating — no RMSE anywhere in this project.\n\n"
+                "a rating, no RMSE anywhere in this project.\n\n"
                 "Concentration this steep is also why the honest baseline to beat is **popularity**, not a "
                 "random ranker, and why coverage and novelty are reported alongside accuracy."
             )
@@ -103,15 +103,15 @@ with meaning:
 st.write("")
 
 # ---- the contrast that drove the pivot --------------------------------------
-with card("For contrast — the 2k set we started on",
+with card("For contrast, the 2k set we started on",
           "Hard-capped at 50 artists per user, ~61% of artists with a single listener."):
     g1, g2 = st.columns(2)
     for col, fname, cap in [
-        (g1, "artist_long_tail.png", "Last.fm-2k: most artists had a single listener — near-unrecommendable."),
+        (g1, "artist_long_tail.png", "Last.fm-2k: most artists had a single listener. Near-unrecommendable."),
         (g2, "lorenz_popularity.png", "Last.fm-2k: an even steeper Lorenz curve (Gini 0.73)."),
     ]:
         path = FIG_DIR / fname
         if path.exists():
             col.image(str(path), caption=cap, width="stretch")
-    st.caption("That artificial shape is exactly why we pivoted to 360K — and why the model ranking changed "
+    st.caption("That artificial shape is exactly why we pivoted to 360K, and why the model ranking changed "
                "once real data arrived.")

@@ -1,6 +1,6 @@
-"""cold_start.py — fallback for users ALS cannot personalise.
+"""cold_start.py, fallback for users ALS cannot personalise.
 
-ALS can only recommend for a user it has a learned latent vector for — i.e. a
+ALS can only recommend for a user it has a learned latent vector for, i.e. a
 user with >=1 interaction in the trained matrix. Two populations need a fallback:
 
   - users entirely absent from training (a brand-new user_id hitting the API), and

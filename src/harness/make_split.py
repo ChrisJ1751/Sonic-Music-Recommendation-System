@@ -1,4 +1,4 @@
-"""make_split.py — ONE-TIME split script. NOT loop code — run by a human.
+"""make_split.py, ONE-TIME split script. NOT loop code, run by a human.
 
 It is the ONLY module that knows the locked-holdout path. The search loop
 (`run_search.py`) and the metric/split definitions (`eval_core.py`) have no
@@ -17,7 +17,7 @@ What it does (three-way per-user partition, reusing the FROZEN split twice):
 Every partition reuses eval_core.per_user_train_test_split, so the holdout and
 the search split obey the exact same leakage-safe, per-user rules. Re-running
 overwrites deterministically (seeds are fixed). Reading the locked holdout is a
-one-time, human-gated promotion step logged in decisions.md — never the loop.
+one-time, human-gated promotion step logged in decisions.md, never the loop.
 
 Usage:  python -m src.harness.make_split
 """
@@ -47,7 +47,7 @@ LOCKED_README_PATH = LOCKED_DIR / "DO_NOT_READ.md"
 
 # --- Split parameters (changing any of these is a decisions.md entry) -------
 # Train on ~80% of each user's history: the old 0.2/0.2 three-way starved
-# training (only ~64% left to learn from) and depressed scores — see decisions.md
+# training (only ~64% left to learn from) and depressed scores, see decisions.md
 # 2026-07-01. Now: holdout 10%, test ~13.5%, train ~76.5%.
 HOLDOUT_FRACTION = 0.1    # per-user fraction sealed into the locked holdout
 TEST_FRACTION = 0.15     # per-user fraction of the remaining ~90% pool used for search test
@@ -63,7 +63,7 @@ def _per_user_counts(m: sp.csr_matrix) -> np.ndarray:
 
 def main() -> None:
     print(RULE)
-    print("MUSIC RECOMMENDER — ONE-TIME SPLIT (frozen correctness layer)")
+    print("MUSIC RECOMMENDER, ONE-TIME SPLIT (frozen correctness layer)")
     print(RULE)
 
     im = load_active_matrix()
@@ -98,7 +98,7 @@ def main() -> None:
     pd.DataFrame({"row": np.arange(n_users), "userID": im.user_ids}).to_parquet(USER_INDEX_PATH, index=False)
     pd.DataFrame({"col": np.arange(n_items), "artistID": im.item_ids}).to_parquet(ITEM_INDEX_PATH, index=False)
     LOCKED_README_PATH.write_text(
-        "# LOCKED HOLDOUT — DO NOT READ FROM THE SEARCH LOOP\n\n"
+        "# LOCKED HOLDOUT, DO NOT READ FROM THE SEARCH LOOP\n\n"
         f"Sealed {locked_holdout.nnz:,} interactions ({HOLDOUT_FRACTION:.0%} per eligible user, "
         f"seed {HOLDOUT_SEED}).\n"
         "This is the single, human-gated arbiter. The loop has no code path or symbol\n"

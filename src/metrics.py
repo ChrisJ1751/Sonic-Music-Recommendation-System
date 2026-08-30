@@ -1,8 +1,8 @@
-"""metrics.py — beyond-accuracy / catalogue-level reporting metrics.
+"""metrics.py, beyond-accuracy / catalogue-level reporting metrics.
 
 These complement the frozen ranking metrics in `eval_core` (which define what a
 "win" is). They are *reporting* metrics: coverage, novelty, diversity, and
-distributional inequality. A recommender can be accurate yet narrow — these
+distributional inequality. A recommender can be accurate yet narrow, these
 quantify that, following Kaminskas & Bridge (TiiS 2017), "Diversity, Serendipity,
 Novelty, and Coverage".
 
@@ -42,7 +42,7 @@ def novelty(recs: np.ndarray, train: sp.csr_matrix) -> float:
 def gini(recs: np.ndarray, n_items: int) -> float:
     """Gini coefficient of how often each item is recommended (0 = even, 1 = concentrated).
 
-    A high Gini means a few artists soak up most recommendations — the
+    A high Gini means a few artists soak up most recommendations, the
     popularity-concentration the long tail induces.
     """
     counts = np.bincount(_valid(recs), minlength=n_items).astype(float)

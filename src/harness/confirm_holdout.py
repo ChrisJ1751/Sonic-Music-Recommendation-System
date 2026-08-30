@@ -1,4 +1,4 @@
-"""confirm_holdout.py — the ONE-TIME, human-gated locked-holdout confirmation.
+"""confirm_holdout.py, the ONE-TIME, human-gated locked-holdout confirmation.
 
 This is the only loop-external place (besides make_split) that touches the
 locked holdout, and it is run by a human exactly once, after a config has been
@@ -14,7 +14,7 @@ Method (mirrors deployment):
   - Score those recommendations against their LOCKED holdout items with the
     frozen `eval_core` metrics, over the same seeds, and report mean +/- std.
 
-Reading the holdout is a deliberate, recorded act — print the result and add it
+Reading the holdout is a deliberate, recorded act, print the result and add it
 to decisions.md. Do not fold this into the search loop.
 
 Usage:  python -m src.harness.confirm_holdout

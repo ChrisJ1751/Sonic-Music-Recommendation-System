@@ -1,13 +1,13 @@
-# Problem Definition — Scope Contract
+# Problem Definition, Scope Contract
 
 ## Goal
-Build a music recommender on the Last.fm HetRec 2011 user–artist dataset, tune
+Build a music recommender on the Last.fm HetRec 2011 user-artist dataset, tune
 its collaborative-filtering hyperparameters with a disciplined, auditable search
 against a frozen evaluation harness, and serve recommendations over a FastAPI
 JSON endpoint.
 
 ## Why this project
-Portfolio piece for Spotify DS applications — deliberately music-domain. It also
+A music-domain recommender built end to end. It also
 demonstrates a reusable, auditable ML-search discipline (the three-file
 architecture) carried over from a professional FPD project.
 
@@ -30,14 +30,14 @@ architecture) carried over from a professional FPD project.
   **Reversed.** The Streamlit app and the Quarto report are now core
   deliverables alongside the API; all three sit on one shared inference core
   (`src/serving.py`).
-- ~~Deep-learning recommenders (two-tower, sequence models) — possible "future
+- ~~Deep-learning recommenders (two-tower, sequence models), possible "future
   work" note, not built.~~
   **Reversed.** A Mult-VAE was built and benchmarked (`src/deep.py`,
   `src/exp_deep_360k.py`). It overtakes ALS on 360K but still trails EASE, which
-  is *why* the linear model is served — a claim that needed the deep model to
+  is *why* the linear model is served, a claim that needed the deep model to
   exist to be worth anything.
 - Social-graph (`user_friends.dat`) and tag-based signals as primary model
-  inputs — tags are reserved for the optional content fallback only.
+  inputs, tags are reserved for the optional content fallback only.
 - Online / real-time learning. The model is fit offline on a fixed snapshot.
 
 ## Feedback framing
@@ -57,5 +57,5 @@ rating. Modeled with confidence-weighted ALS; evaluated with ranking metrics.
 ## Non-goals masquerading as goals (explicitly rejected)
 - Chasing a single high metric number. At this sparsity, a wide enough search
   manufactures lucky winners; the protocol (`program.md`) guards against that.
-- Porting FPD's stability-across-seeds machinery by default — only if the
+- Porting FPD's stability-across-seeds machinery by default, only if the
   sparsity investigation justifies it.

@@ -1,4 +1,4 @@
-"""Artist radio — 'fans also like'. Nearest artists in EASE's learned item-item
+"""Artist radio, 'fans also like'. Nearest artists in EASE's learned item-item
 space, symmetrised.
 
 No genre tags, no audio features: these neighbours come purely from who listens
@@ -15,7 +15,7 @@ from src import serving
 state = get_state()
 
 page_header("Artist radio",
-            "Nearest artists in EASE's learned item-item space — the model's 'fans also like'.")
+            "Nearest artists in EASE's learned item-item space, the model's 'fans also like'.")
 
 
 @st.cache_data(show_spinner=False)
@@ -57,4 +57,4 @@ else:
             },
         )
     st.caption("These are the artists whose listeners most overlap with the picked one, learned purely from "
-               "co-listening — no genre tags or audio features involved.")
+               "co-listening, no genre tags or audio features involved.")

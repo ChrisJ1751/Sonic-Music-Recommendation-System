@@ -124,7 +124,7 @@ def _gini(x: np.ndarray) -> float:
 
 @st.cache_data(show_spinner="Computing dataset statistics ...")
 def data_stats() -> dict:
-    """Live EDA over the loaded 360K matrix — genuinely the served data."""
+    """Live EDA over the loaded 360K matrix, genuinely the served data."""
     s = get_state()
     m = s.im.matrix.tocsr()
     n_users, n_items = m.shape

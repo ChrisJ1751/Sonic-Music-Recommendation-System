@@ -1,4 +1,4 @@
-"""models.py — model zoo + comparison driver for benchmarking baselines.
+"""models.py, model zoo + comparison driver for benchmarking baselines.
 
 Motivated by Ferrari Dacrema et al., "Are We Really Making Much Progress?"
 (RecSys 2019): complex recommenders are routinely beaten by well-chosen simple
@@ -79,7 +79,7 @@ def fit_ease(train: sp.csr_matrix, reg: float = 100.0) -> np.ndarray:
 
     Closed form of B = argmin ||X - XB||^2 + reg||B||^2 s.t. diag(B)=0:
     B = -P / diag(P) with P = (X^T X + reg*I)^-1, off-diagonal zeroed. Deterministic.
-    O(n_items^3) — a few GB and ~a minute at ~12-17k items.
+    O(n_items^3), a few GB and ~a minute at ~12-17k items.
     """
     X = (train > 0).astype(np.float32).tocsr()
     gram = np.asarray((X.T @ X).todense(), dtype=np.float32)

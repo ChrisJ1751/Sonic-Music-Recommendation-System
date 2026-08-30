@@ -1,8 +1,8 @@
-"""plotting.py — reusable, portfolio-grade charts for the recommender.
+"""plotting.py, reusable, portfolio-grade charts for the recommender.
 
 One place for figure styling so every chart in the notebooks and reports looks
 consistent and is reproducible from the repo (not from throwaway scripts). The
-palette nods to the Spotify target (green accent, near-black text) without being
+palette uses a green accent on near-black text without being
 gaudy.
 
 Each function takes raw arrays, returns (fig, ax), and optionally saves a
@@ -18,11 +18,11 @@ import matplotlib.ticker as mticker
 import numpy as np
 
 # --- palette ----------------------------------------------------------------
-GREEN = "#1DB954"   # Spotify green — primary bars
-DARK = "#191414"    # near-black — text
-ACCENT = "#E8743B"  # warm orange — annotations / reference lines
-MUTED = "#9AA0A6"   # grey — secondary series
-PURPLE = "#8B5CF6"  # violet — a second data series
+GREEN = "#1DB954"   # primary bars
+DARK = "#191414"    # near-black, text
+ACCENT = "#E8743B"  # warm orange, annotations / reference lines
+MUTED = "#9AA0A6"   # grey, secondary series
+PURPLE = "#8B5CF6"  # violet, a second data series
 
 
 def set_style() -> None:
@@ -100,7 +100,7 @@ def plot_interactions_per_user(counts: np.ndarray, save_path=None):
 
 
 def plot_artist_long_tail(listeners: np.ndarray, save_path=None):
-    """Artists-per-listener-count on log-log axes — the classic power-law view.
+    """Artists-per-listener-count on log-log axes, the classic power-law view.
 
     `listeners[j]` = number of distinct users who listened to artist j.
     """
@@ -147,7 +147,7 @@ def plot_weight_distribution(weights: np.ndarray, save_path=None):
 
     _titles(ax, "Listen counts span six orders of magnitude",
             "From 1 to ~352,700 plays. We treat counts as confidence (c = 1 + alpha*count), not as ratings.",
-            "listen count per (user, artist) — log scale", "(user, artist) pairs")
+            "listen count per (user, artist), log scale", "(user, artist) pairs")
     fig.tight_layout()
     _save(fig, save_path)
     return fig, ax

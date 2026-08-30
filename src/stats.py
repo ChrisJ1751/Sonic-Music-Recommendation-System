@@ -1,4 +1,4 @@
-"""stats.py — bootstrap confidence intervals and paired significance tests.
+"""stats.py, bootstrap confidence intervals and paired significance tests.
 
 Per Ferrari Dacrema et al. (RecSys 2019), reporting that model A beats model B is
 only credible with a significance test on the *same* users. We resample users

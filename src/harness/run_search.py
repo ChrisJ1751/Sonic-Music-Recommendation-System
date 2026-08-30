@@ -1,4 +1,4 @@
-"""run_search.py — THE FROZEN RUNNER (the autoresearch loop, our adaptation).
+"""run_search.py, THE FROZEN RUNNER (the autoresearch loop, our adaptation).
 
 Glues the three files together for one search attempt:
   1. Reads `search_config.CONFIG` (the agent-editable knobs) and validates it
@@ -7,7 +7,7 @@ Glues the three files together for one search attempt:
   3. Trains confidence-weighted implicit ALS on TRAIN and evaluates with the
      frozen `eval_core` metrics on TEST, over several seeds, and reports the
      mean and std (the lightweight seed-sensitivity check the sparsity
-     investigation called for — not the full FPD stability apparatus).
+     investigation called for, not the full FPD stability apparatus).
   4. Appends ONE row to outputs/experiments/log.jsonl. **Promotes nothing.**
 
 It never reads the locked holdout (it has no symbol for that path) and never
@@ -54,7 +54,7 @@ def validate(cfg: dict, bounds: dict) -> None:
             raise ValueError(f"config missing required key: {key!r}")
         if not (lo <= cfg[key] <= hi):
             raise ValueError(
-                f"{key}={cfg[key]} out of bounds [{lo}, {hi}] — "
+                f"{key}={cfg[key]} out of bounds [{lo}, {hi}], "
                 "changing a bound is a protocol change (decisions.md), not a tuning move."
             )
 
@@ -140,7 +140,7 @@ def run(cfg: dict, seeds=DEFAULT_SEEDS, k: int = DEFAULT_K, log: bool = True,
         "seeds": list(seeds),
         **{key: cfg[key] for key in search_config.BOUNDS},
         "metrics": scores,
-        "holdout_read": False,  # audit guard — True is a bug
+        "holdout_read": False,  # audit guard, True is a bug
     }
     if log:
         append_log(row)

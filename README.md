@@ -1,33 +1,27 @@
----
-title: Sonic Music Recommender
-sdk: streamlit
-app_file: app/streamlit_app.py
-python_version: "3.11"
-pinned: false
-short_description: A disciplined music recommender — EASE on Last.fm-360K.
----
+# Music Recommendation System, with Disciplined Hyperparameter Search
 
-<!-- The YAML block above is Hugging Face Space config (used when this repo is
-     deployed as a Streamlit Space). GitHub renders it as a small table; harmless.
-     See DEPLOY.md. -->
-
-# Music Recommendation System — with Disciplined Hyperparameter Search
-
-### [Try the live app](https://jone1751-sonic.hf.space) · [Read the report](https://chrisj1751.github.io/Sonic-Music-Recommendation-System/)
+### [Try the live app](https://jone1751-sonic.hf.space) · [API docs](https://jone1751-sonic-api.hf.space/docs) · [Read the report](https://chrisj1751.github.io/Sonic-Music-Recommendation-System/)
 
 [![app](https://img.shields.io/badge/live%20app-Hugging%20Face-1ed760)](https://jone1751-sonic.hf.space)
+[![api](https://img.shields.io/badge/API-FastAPI-009688)](https://jone1751-sonic-api.hf.space/docs)
 [![report](https://img.shields.io/badge/report-GitHub%20Pages-8b5cf6)](https://chrisj1751.github.io/Sonic-Music-Recommendation-System/)
 [![CI](https://github.com/ChrisJ1751/Sonic-Music-Recommendation-System/actions/workflows/ci.yml/badge.svg)](https://github.com/ChrisJ1751/Sonic-Music-Recommendation-System/actions/workflows/ci.yml)
 
-A collaborative-filtering music recommender built on the **Last.fm (HetRec 2011)**
-user–artist listening dataset, with an **autoresearch-style three-file search
-architecture** for tuning the model against a *frozen, reusable* evaluation
-harness. Presented three ways from one shared core: a **Streamlit** app (interactive
-results + live demo), a **FastAPI** serving layer, and a **Quarto** written report.
+A collaborative-filtering music recommender on **Last.fm-360K** (39,499 users ×
+11,607 artists, 1.68M interactions), tuned against a *frozen, reusable* evaluation
+harness through an **autoresearch-style three-file search architecture**. The
+served model is **EASE**, a linear item-item autoencoder that beat tuned ALS *and*
+a deep Mult-VAE on the same frozen split, every margin significance-tested by
+paired bootstrap.
 
-> Portfolio project (target: Spotify DS roles). The repository and its
-> documentation are as much the deliverable as the model is. See
-> [`docs/`](docs/) for the Confluence-style project pages.
+Three surfaces from one shared inference core, all deployed: a **Streamlit**
+dashboard, a **containerised FastAPI** service, and a **Quarto** report. The
+service fetches its 514 MiB model matrix at boot and verifies it, rather than
+refitting, because refitting needs ~2.5 to 3 GB and would exhaust the container.
+
+> The repository and its documentation are as much the deliverable as the model
+> is. See [`docs/`](docs/) for the project pages: scope, evaluation design,
+> model card, and the decision log.
 
 ## Why three files
 
@@ -38,9 +32,9 @@ three-file shape:
 
 | Role | File | Who edits it |
 |---|---|---|
-| **Frozen correctness layer** — the train/test split + the metric definitions | [`src/harness/eval_core.py`](src/harness/eval_core.py) | **Never edited** by the search loop |
-| **Editable search surface** — ALS hyperparameters only | [`src/harness/search_config.py`](src/harness/search_config.py) | The **only** file the agent/loop mutates |
-| **Protocol** — what to try, in what order, what counts as improvement, when to stop | [`src/harness/program.md`](src/harness/program.md) | Human-written; the loop follows it |
+| **Frozen correctness layer**, the train/test split + the metric definitions | [`src/harness/eval_core.py`](src/harness/eval_core.py) | **Never edited** by the search loop |
+| **Editable search surface**, ALS hyperparameters only | [`src/harness/search_config.py`](src/harness/search_config.py) | The **only** file the agent/loop mutates |
+| **Protocol**, what to try, in what order, what counts as improvement, when to stop | [`src/harness/program.md`](src/harness/program.md) | Human-written; the loop follows it |
 
 The point: the thing that *defines a win* (the split and the metrics) can never
 be edited by the thing that's *trying to win*. That's what makes the search
@@ -49,24 +43,24 @@ auditable.
 **What carries over from FPD, and what does not.** FPD needed a
 stability-across-seeds/folds layer because its data was tiny *and severely
 imbalanced* (194 positives, 2.43% base rate). This dataset has a different
-problem — **extreme sparsity, not class imbalance**. We apply the same
+problem, **extreme sparsity, not class imbalance**. We apply the same
 three-file discipline, but we do **not** copy FPD's stability machinery unless
 the EDA shows sparsity creates an analogous fragility. That investigation is
 tracked in
 [`docs/specs/sparsity_fragility_investigation.md`](docs/specs/sparsity_fragility_investigation.md)
-— honesty over cargo-culting.
+, honesty over cargo-culting.
 
-## Data — two phases
+## Data, two phases
 
-The signal throughout is a **listening count** per (user, artist) — **implicit
+The signal throughout is a **listening count** per (user, artist), **implicit
 feedback**, not ratings.
 
-- **Phase 1 — Last.fm-2k** ([GroupLens HetRec 2011](https://grouplens.org/datasets/hetrec-2011/)):
+- **Phase 1: Last.fm-2k** ([GroupLens HetRec 2011](https://grouplens.org/datasets/hetrec-2011/)):
   1,892 users, 17,632 artists, 92,834 records. Used to *develop the methodology*.
   Its top-50-per-user cap made it small and artificial (and depressed scores).
-- **Phase 2 — Last.fm-360K** (Celma): 359K users / 17.6M records of *real,
+- **Phase 2: Last.fm-360K** (Celma): 359K users / 17.6M records of *real,
   uncapped* histories, filtered to a dense core (**39,499 users × 11,607 artists,
-  1.68M interactions**; `src/data_360k.py`). This is the **active** dataset —
+  1.68M interactions**; `src/data_360k.py`). This is the **active** dataset,
   what the model, API, and demo run on. Switch with `active_dataset` in
   `configs/data_config.yaml`.
 
@@ -75,7 +69,7 @@ Raw files live in `data/raw/` and `data/raw_360k/` (not committed).
 ## Repo map
 
 ```
-configs/            data_config.yaml — where the data lives + schema
+configs/            data_config.yaml, where the data lives + schema
 data/
   raw/              Last.fm .dat files (gitignored)
   interim/          intermediate artifacts
@@ -160,24 +154,24 @@ docker build -t music-rec . && docker run -p 8000:8000 music-rec   # containeris
 
 CI (`.github/workflows/ci.yml`) runs ruff + pytest on every push (Python 3.12).
 
-## Running it — three surfaces, one core
+## Running it, three surfaces, one core
 
 The app and the API import the same inference core (`src/serving.py`), so there is
 no duplicated recommendation logic; the report is the static written companion.
 
-**1. The Streamlit app** — the interactive front door (results + charts + live demo):
+**1. The Streamlit app**, the interactive front door (results + charts + live demo):
 
 ```bash
 pip install -e ".[app]"
 streamlit run app/streamlit_app.py        # http://localhost:8501
 ```
 
-Sidebar — *The project*: **Overview** (headline result + leaderboard),
+Sidebar, *The project*: **Overview** (headline result + leaderboard),
 **The data** (live 360K EDA), **Models & results** (leaderboard, SOTA calibration,
 and live coverage/novelty metrics), **Methodology & limitations**; *Try it live*:
 **Recommendations** and **Artist radio**.
 
-**2. The FastAPI service** — the serving/engineering layer. Containerised and
+**2. The FastAPI service**, the serving/engineering layer. Containerised and
 live at **<https://jone1751-sonic-api.hf.space>**
 ([`/docs`](https://jone1751-sonic-api.hf.space/docs) ·
 [`/health`](https://jone1751-sonic-api.hf.space/health)), running as a Hugging
@@ -215,12 +209,12 @@ $ curl http://127.0.0.1:8000/recommendations/99999999?k=5
 $ curl "http://127.0.0.1:8000/recommendations/17084?k=5&diversity=0.7"
 {"user_id": 17084, "strategy": "ease+mmr", ...}
 
-# "fans also like" — nearest artists in EASE's item-item weights:
+# "fans also like", nearest artists in EASE's item-item weights:
 $ curl http://127.0.0.1:8000/similar-artists/733?k=5
 {"artist_id": 733, "name": "joy division", "similar": [...]}
 ```
 
-**3. The written report** (`report/`) — a Quarto website: the read-the-work
+**3. The written report** (`report/`), a Quarto website: the read-the-work
 companion (data → methodology → results → **model exploration** → the pivot →
 limitations), with the figures and tables inline. The *Model exploration* page
 walks the full journey from a popularity baseline to EASE to the deep Mult-VAE.
@@ -244,17 +238,17 @@ quarto preview report       # live-reloading local preview
 Methodology complete on Phase 1 (2k), then **scaled to Last.fm-360K** (notebook
 `08`). On the richer data the **linear EASE autoencoder** (Steck 2019) wins the
 model comparison and is the **served** model, scoring **NDCG@10 = 0.22, NDCG@100 =
-0.36, Recall@50 = 0.42** under honest full-ranking evaluation — squarely in the
+0.36, Recall@50 = 0.42** under honest full-ranking evaluation, squarely in the
 published SOTA band.
 
 A deep-learning capstone (`src/exp_deep_360k.py`) then benchmarked a **Mult-VAE**
 against the zoo on the same frozen split. Corrected 360K leaderboard (NDCG@10, all
 p<0.001): **EASE 0.219 > Mult-VAE 0.194 > ALS 0.184 > BM25 0.110 > popularity 0.044**.
-The deep model climbs from *last* on 2k to *2nd* on 360K — overtaking ALS — but
+The deep model climbs from *last* on 2k to *2nd* on 360K, overtaking ALS, but
 still trails EASE. It covers ~2x the catalogue (0.81 vs 0.42) at lower accuracy: the
 accuracy-vs-discovery frontier, not a free win. EASE stays served.
 
-137 tests pass (126 of them with no model artifacts, so CI runs them on every push), ruff clean. Three surfaces from one shared core — a **Streamlit**
+137 tests pass (126 of them with no model artifacts, so CI runs them on every push), ruff clean. Three surfaces from one shared core, a **Streamlit**
 app, a **FastAPI** service, and a **Quarto** report (see `report/`, incl. the
 *Model exploration* page). Next planned: track-level (song) recommendations, on a
 more recent dataset (e.g. the Spotify Million Playlist Dataset). See

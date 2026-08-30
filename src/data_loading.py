@@ -1,9 +1,9 @@
-"""data_loading.py — load Last.fm and build the user-artist interaction matrix.
+"""data_loading.py, load Last.fm and build the user-artist interaction matrix.
 
 Reusable, side-effect-free helpers imported by the EDA notebook, the harness,
 and the API. No modeling or metric logic lives here (that's eval_core / als).
 Filenames and the raw-data location come from configs/data_config.yaml via
-src.utils — nothing here hardcodes a relative path.
+src.utils, nothing here hardcodes a relative path.
 
 The interactions file is `user_artists.dat`: `userID \t artistID \t weight`,
 where `weight` is a listening count (implicit feedback).

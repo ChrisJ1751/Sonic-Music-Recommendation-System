@@ -1,4 +1,4 @@
-# Evaluation Design — why the split is per-user, and what the metrics mean
+# Evaluation Design, why the split is per-user, and what the metrics mean
 
 > Frozen contract. Implemented in `src/harness/eval_core.py`, validated by
 > `tests/test_eval_core.py`. This document is the *why* the code is the *what*.
@@ -21,25 +21,25 @@ Everything below follows from those two requirements.
 A "naive row split" shuffles the ~92,834 `(user, artist, weight)` rows and puts,
 say, 80% in train and 20% in test. Two things go wrong:
 
-### 1. It leaks — the model sees the answer while forming the user vector
+### 1. It leaks, the model sees the answer while forming the user vector
 In matrix factorization (ALS), a user's recommendations come from that user's
 **latent vector**, which is fit from *that user's rows in the training matrix*.
 If a random split leaves some of a user's interactions in train and some in
 test, the model fits the user's vector partly toward artists that also appear in
-their test set (because tastes are internally correlated — the held-out artists
+their test set (because tastes are internally correlated, the held-out artists
 look like the kept ones). The user vector is therefore **pulled toward the very
 items we then "test" on.** Worse, the standard top-N evaluation removes a user's
-*train* items from their candidate list — but a naively split user can have the
+*train* items from their candidate list, but a naively split user can have the
 same artist's signal bleed across the split. The reported precision/NDCG comes
 out inflated and does not reflect held-out generalization. This is the classic
 "information leak" in recommender evaluation.
 
-### 2. With a different naive split — by user — ALS literally can't score them
+### 2. With a different naive split, by user, ALS literally can't score them
 The other naive instinct is to split *users* into a train group and a test
 group. But ALS has **no latent vector** for a user who contributed zero rows to
 the training matrix (that's the cold-start problem). Such a user can only be
 served by the popularity/content fallback. So a user-level split doesn't measure
-the collaborative-filtering model at all — it measures the fallback. Useful for
+the collaborative-filtering model at all, it measures the fallback. Useful for
 evaluating cold start specifically; wrong as the *main* CF metric.
 
 ## The correct protocol: per-user interaction holdout
@@ -61,7 +61,7 @@ it measures the real task (rank unseen items for a known user).
 A user needs at least `min_user_interactions` (default 2) to be split: you
 cannot hold out a test item from a user with a single interaction without
 leaving the model nothing to learn their vector from. Users below the threshold
-stay entirely in train and are **excluded from CF test scoring** — they are
+stay entirely in train and are **excluded from CF test scoring**, they are
 precisely the cold-start population the fallback owns. The EDA quantifies how
 many users this is (see `sparsity_fragility_investigation.md`).
 

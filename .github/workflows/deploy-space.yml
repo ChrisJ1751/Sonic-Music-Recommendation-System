@@ -1,0 +1,64 @@
+name: Deploy to Hugging Face Space
+
+# Manual trigger only, deliberately. Deploying is outward-facing, so it is not
+# wired to `push`. Requires an HF_TOKEN repository secret with WRITE scope.
+#
+# Why this exists: a Space declares its SDK in README front matter, and the
+# repository README should not carry deployment config (it renders as a stray
+# table on GitHub and tells a reader nothing). Each Space therefore gets its own
+# README from docker/, swapped in here and force-pushed as a snapshot, so the
+# repository keeps exactly one README of its own.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Which Space to deploy"
+        required: true
+        type: choice
+        default: app
+        options: [app, api]
+
+concurrency:
+  group: deploy-space-${{ inputs.target }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The API image copies the committed 360K core and fails the build if
+          # these arrive as LFS pointer stubs.
+          lfs: true
+          fetch-depth: 0
+
+      - name: Resolve target
+        id: cfg
+        run: |
+          if [ "${{ inputs.target }}" = "api" ]; then
+            echo "space=jone1751/sonic-api"            >> "$GITHUB_OUTPUT"
+            echo "readme=docker/hf-space-README.md"    >> "$GITHUB_OUTPUT"
+          else
+            echo "space=jone1751/sonic"                >> "$GITHUB_OUTPUT"
+            echo "readme=docker/hf-space-app-README.md" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Swap in the Space README
+        run: cp "${{ steps.cfg.outputs.readme }}" README.md
+
+      - name: Push a snapshot to the Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SPACE: ${{ steps.cfg.outputs.space }}
+        run: |
+          test -n "$HF_TOKEN" || { echo "::error::HF_TOKEN secret is not set"; exit 1; }
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b space-snapshot
+          git add README.md
+          git commit -m "Deploy ${GITHUB_SHA::7} from ${GITHUB_REF_NAME}"
+          git lfs install --local
+          git remote add space "https://user:${HF_TOKEN}@huggingface.co/spaces/${SPACE}"
+          git push --force space space-snapshot:main

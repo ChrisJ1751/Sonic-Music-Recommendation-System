@@ -2,8 +2,17 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    # Feature branches too, not just main: a branch should be green before it is
+    # reviewed, and waiting for a PR to exist means the first CI signal arrives
+    # after someone has already started reading the diff.
+    branches: [main, master, "feat/**", "fix/**", "chore/**"]
   pull_request:
+
+# A push to a branch with an open PR would otherwise run CI twice. Keep the
+# newest run per ref and cancel the rest.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint-and-test:

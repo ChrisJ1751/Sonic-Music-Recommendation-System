@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import os
 import sys
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,8 +31,12 @@ GREEN = "#1ed760"
 PURPLE = "#a880ff"      # lightened from #8b5cf6 for better contrast on dark
 BLUE = "#4aa3ff"
 AMBER = "#f0a63c"
-MUTED = "#6b7688"       # readable muted (bars/labels)
-FAINT = "#3a4150"       # non-highlighted bars
+# Contrast ratios below are against the app background (#0c0d11), measured with
+# the WCAG 2.1 relative-luminance formula. Non-text graphics need 3:1 (1.4.11);
+# text needs 4.5:1 (1.4.3). Chart labels are text, which is the stricter bar.
+MUTED = "#6b7688"       # 4.23:1 - reference lines only, NOT text
+FAINT = "#5a6478"       # 3.26:1 - non-highlighted bars/markers (was #3a4150 at 1.90:1)
+LABEL = "#8b95a8"       # 6.44:1 - text drawn inside charts
 GRID = "rgba(255,255,255,0.07)"
 TEXT = "#eef1f6"
 
@@ -72,10 +78,34 @@ def _ensure_ease_artifact() -> None:
 
 
 @st.cache_resource(show_spinner="Loading the Last.fm-360K model (once) ...")
-def get_state() -> serving.RecoState:
+def _load_state() -> serving.RecoState:
     """Load the dataset + fit/load EASE. Cached for the whole server process."""
     _ensure_ease_artifact()
     return serving.load_state()
+
+
+def get_state() -> serving.RecoState:
+    """`_load_state` with a human failure path.
+
+    Every page calls this first, so an unhandled exception here renders a raw
+    Python traceback to whoever opened the demo. Streamlit does not cache a
+    raised exception, so a rerun genuinely retries rather than replaying a
+    cached failure.
+    """
+    try:
+        return _load_state()
+    except Exception as exc:                                   # noqa: BLE001
+        st.error(
+            "**The model could not be loaded.** This app needs the Last.fm-360K "
+            "matrix and the pre-fitted EASE weights; one of them is unavailable "
+            "right now. The written report and the API are unaffected."
+        )
+        st.caption(f"`{type(exc).__name__}: {exc}`")
+        st.caption(
+            "Report: https://chrisj1751.github.io/Sonic-Music-Recommendation-System/ · "
+            "API: https://jone1751-sonic-api.hf.space/docs"
+        )
+        st.stop()
 
 
 @st.cache_data
@@ -123,12 +153,39 @@ def style_fig(fig: go.Figure, height: int = 340) -> go.Figure:
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         font=dict(color=TEXT, size=13),
-        title_font=dict(size=15),
+        # Set the title text explicitly. Cards supply their own heading, so most
+        # figures now have no Plotly title -- and styling `title_font` without a
+        # `title.text` makes Plotly render the string "undefined" above the plot.
+        title=dict(text=fig.layout.title.text or "", font=dict(size=15)),
         legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", y=1.12, x=0),
     )
     fig.update_xaxes(gridcolor=GRID, zerolinecolor=GRID)
     fig.update_yaxes(gridcolor=GRID, zerolinecolor=GRID)
     return fig
+
+
+# --- dashboard primitives -------------------------------------------------
+#
+# A dashboard reads as a grid of cards; a notebook reads as a scroll of prose.
+# These two helpers are what make the difference, and living here means every
+# page gets the same treatment instead of hand-rolling containers per view.
+
+@contextmanager
+def card(title: str | None = None, caption: str | None = None) -> Iterator[None]:
+    """A bordered panel with an optional title and one-line caption."""
+    with st.container(border=True):
+        if title:
+            st.markdown(f"##### {title}")
+        if caption:
+            st.caption(caption)
+        yield
+
+
+def kpi_row(items: Sequence[tuple[str, str, str | None]], columns: int | None = None) -> None:
+    """A band of bordered metric tiles. `items` is (label, value, help)."""
+    cols = st.columns(columns or len(items))
+    for col, (label, value, help_text) in zip(cols, items, strict=False):
+        col.metric(label, value, help=help_text, border=True)
 
 
 def page_header(title: str, subtitle: str) -> None:

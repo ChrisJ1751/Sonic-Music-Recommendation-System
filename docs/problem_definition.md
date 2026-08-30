@@ -21,9 +21,21 @@ architecture) carried over from a professional FPD project.
 - Confluence-style documentation of the architecture and decisions.
 
 ## Out of scope
-- Any frontend / Streamlit (a JSON endpoint is the deliverable).
-- Deep-learning recommenders (two-tower, sequence models) — possible "future
-  work" note, not built.
+
+> **Two items below were reversed in practice and are struck through rather than
+> deleted, so the change of scope stays visible.** See AGENTS.md and
+> `decisions.md` (2026-07-01, 2026-08-28).
+
+- ~~Any frontend / Streamlit (a JSON endpoint is the deliverable).~~
+  **Reversed.** The Streamlit app and the Quarto report are now core
+  deliverables alongside the API; all three sit on one shared inference core
+  (`src/serving.py`).
+- ~~Deep-learning recommenders (two-tower, sequence models) — possible "future
+  work" note, not built.~~
+  **Reversed.** A Mult-VAE was built and benchmarked (`src/deep.py`,
+  `src/exp_deep_360k.py`). It overtakes ALS on 360K but still trails EASE, which
+  is *why* the linear model is served — a claim that needed the deep model to
+  exist to be worth anything.
 - Social-graph (`user_friends.dat`) and tag-based signals as primary model
   inputs — tags are reserved for the optional content fallback only.
 - Online / real-time learning. The model is fit offline on a fixed snapshot.

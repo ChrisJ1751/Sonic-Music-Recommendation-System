@@ -19,7 +19,7 @@ dependencies = [
     "threadpoolctl>=3.6.0",
     "fastapi>=0.141.1",
     "uvicorn[standard]>=0.52.4",
-    "pydantic>=2.13.4",
+    "pydantic>=2.13.5",
     "pyyaml>=6.0.3",
     "python-dotenv>=1.2.3",
     "matplotlib>=3.11.1",
@@ -30,7 +30,7 @@ dependencies = [
 dev = [
     "pytest>=9.1.1",
     "httpx>=0.28.1",
-    "ruff>=0.16.4",
+    "ruff>=0.16.5",
     "jupyterlab>=4.6.3",
     "ipywidgets>=8.1.9",
 ]

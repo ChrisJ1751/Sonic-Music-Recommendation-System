@@ -20,7 +20,7 @@ plotly>=7.0.0
 # API (FastAPI service)
 fastapi>=0.141.1
 uvicorn[standard]>=0.52.4
-pydantic>=2.13.4
+pydantic>=2.13.5
 
 # Config
 pyyaml>=6.0.3
